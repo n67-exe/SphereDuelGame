@@ -8,6 +8,12 @@
 using namespace tle;
 using namespace std;
 
+#ifdef _MSC_VER
+#define FUNCTION_SIGNATURE __FUNCSIG__
+#else
+#define FUNCTION_SIGNATURE __PRETTY_FUNCTION__
+#endif // _MSC_VER
+
 namespace internal
 {
 	template <typename T>
