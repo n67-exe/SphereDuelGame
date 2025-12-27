@@ -139,7 +139,7 @@ private:
 	TFloat32 m_x, m_y, m_z; // TODO: vec3
 };
 
-void main()
+void main() try
 {
 	// Create a 3D engine (using TLX engine here) and open a window for it
 	I3DEngine& myEngine = *New3DEngine(kTLX);;
@@ -308,4 +308,13 @@ void main()
 
 	// Delete the 3D engine now we are finished with it
 	myEngine.Delete();
+}
+catch (const std::exception& ex)
+{
+	clog << "\nCaught std::exception:\n";
+	clog << ex.what() << flush;
+}
+catch (...)
+{
+	clog << "\nCaught unknown exception." << flush;
 }
