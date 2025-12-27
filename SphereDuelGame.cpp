@@ -118,6 +118,11 @@ namespace internal
 	}
 }
 
+struct Vec3
+{
+	TFloat32 x = 0, y = 0, z = 0;
+};
+
 class Camera
 {
 public:
@@ -136,7 +141,7 @@ public:
 private:
 	I3DEngine& m_engine;
 	ICamera& m_camera;
-	TFloat32 m_x, m_y, m_z; // TODO: vec3
+	Vec3 m_position; 
 };
 
 void main() try
