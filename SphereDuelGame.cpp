@@ -126,21 +126,59 @@ struct Vec3
 class Camera
 {
 public:
-	Camera(I3DEngine& engine)
+	Camera(I3DEngine& engine) noexcept
 		: m_engine(engine)
-		, m_camera(DEREF(engine.CreateCamera(kManual)))
+	{}
+
+	~Camera() noexcept(false)
 	{
-		
+		if (is_created())
+			destroy();
 	}
 
-	void attachTo()
+	Camera(const Camera&) = delete;
+	Camera(Camera&&) = delete;
+
+	Camera& operator=(const Camera&) = delete;
+	Camera& operator=(Camera&&) = delete;
+
+public:
+	void create()
 	{
-		//if (m_camera)
+		ASSERT(!is_created()); // TODO: message
+		
+		m_camera = m_engine.CreateCamera(kManual, m_position.x, m_position.y, m_position.z);
+	}
+
+	void destroy()
+	{
+		ASSERT(is_created()); // TODO: message
+
+		m_engine.RemoveCamera(m_camera);
+	}
+
+	bool is_created() const noexcept
+	{
+		return m_camera != nullptr;
+	}
+
+public:
+	Vec3 get_position() const noexcept
+	{
+		return m_position;
+	}
+
+	void set_position(Vec3 position)
+	{
+		m_position = position;
+
+		if (is_created())
+			m_camera->SetPosition(m_position.x, m_position.y, m_position.z);
 	}
 
 private:
 	I3DEngine& m_engine;
-	ICamera& m_camera;
+	ICamera* m_camera = nullptr;
 	Vec3 m_position; 
 };
 
