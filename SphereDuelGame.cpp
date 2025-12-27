@@ -40,8 +40,8 @@ namespace internal
 #endif
 
 		// check that signature prefix and suffix are correct
-		bool starts_with_prefix = (function.size() >= prefix.size() && function.compare(0, prefix.size(), prefix) == 0);
-		bool ends_with_suffix = (function.size() >= suffix.size() && function.compare(function.size() - suffix.size(), suffix.size(), suffix) == 0);
+		const bool starts_with_prefix = (function.size() >= prefix.size() && function.compare(0, prefix.size(), prefix) == 0);
+		const bool ends_with_suffix = (function.size() >= suffix.size() && function.compare(function.size() - suffix.size(), suffix.size(), suffix) == 0);
 
 		ASSERT(starts_with_prefix, "Function signature must start with prefix");
 		ASSERT(ends_with_suffix, "Function signature must end with suffix");
@@ -65,7 +65,7 @@ namespace internal
 
 	string format_message(cstring category, cstring title, cstring reason, cstring code, cstring file, long long line, cstring func_name, cstring func_sig)
 	{
-		const int offset = 12;
+		constexpr int offset = 12;
 
 		ostringstream message;
 
