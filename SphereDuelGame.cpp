@@ -16,9 +16,13 @@ using namespace std;
 
 using cstring = const char*;
 
-// optional second parameter is the message
-#define DEREF(pointer, ...)		internal::deref_impl(pointer, cstring{__VA_ARGS__}, #pointer, __FILE__, __LINE__, __FUNCTION__, FUNCTION_SIGNATURE)
-#define ASSERT(condition, ...)	internal::assert_impl(condition, cstring{__VA_ARGS__}, #condition, __FILE__, __LINE__, __FUNCTION__, FUNCTION_SIGNATURE)
+// optional second parameter is the message (message is always evaluated) // TODO: fix evaluation
+#define DEREF(pointer, ...) \
+	internal::deref_impl(pointer, cstring{__VA_ARGS__}, internal::CallInfo{#pointer, __FILE__, __LINE__, __FUNCTION__, FUNCTION_SIGNATURE})
+
+// optional second parameter is the message (message is always evaluated) // TODO: fix evaluation
+#define ASSERT(condition, ...) \
+	internal::assert_impl(condition, cstring{__VA_ARGS__}, internal::CallInfo{#condition, __FILE__, __LINE__, __FUNCTION__, FUNCTION_SIGNATURE})
 
 namespace internal
 {
@@ -49,6 +53,15 @@ namespace internal
 		return function.substr(prefix.size(), function.size() - prefix.size() - suffix.size()); // strip prefix and suffix
 	}
 
+	struct CallInfo
+	{
+		cstring code;
+		cstring file;
+		long long line;
+		cstring function_name;
+		cstring function_signature;
+	};
+
 	constexpr cstring filename(cstring path)
 	{
 		if (path == nullptr)
@@ -63,7 +76,7 @@ namespace internal
 		return file;
 	}
 
-	string format_message(cstring category, cstring title, cstring reason, cstring code, cstring file, long long line, cstring func_name, cstring func_sig)
+	string format_message(cstring category, cstring title, cstring reason, const CallInfo& info)
 	{
 		constexpr int offset = 12;
 
@@ -75,46 +88,52 @@ namespace internal
 		if (reason)
 			message << setw(offset) << "  reason" << " : " << reason << '\n';
 
-		if (code)
-			message << setw(offset) << "  code" << " : " << code << '\n';
+		if (info.code)
+			message << setw(offset) << "  code" << " : " << info.code << '\n';
 
-		if (file)
-			message << setw(offset) << "  location" << " : " << filename(file) << ":" << line << " [" << file << "]" << '\n';
+		if (info.file)
+			message << setw(offset) << "  location" << " : " << filename(info.file) << ":" << info.line << " [" << info.file << "]" << '\n';
 
-		if (func_sig)
-			message << setw(offset) << "  function" << " : " << (func_name ? func_name : "") << " [" << func_sig << "]" << '\n';
-		else if (func_name)
-			message << setw(offset) << "  function" << " : " << func_name << '\n';
+		if (info.function_signature)
+		{
+			if (info.function_name)
+				message << setw(offset) << "  function" << " : " << info.function_name << " [" << info.function_signature << "]" << '\n';
+			else
+				message << setw(offset) << "  function" << " : " << "[" << info.function_signature << "]" << '\n';
+		}
+		else 
+			if (info.function_name)
+				message << setw(offset) << "  function" << " : " << info.function_name << '\n';
 
 		return message.str();
 	}
 
 	[[noreturn]]
-	void report_fatal_error(cstring title, cstring reason, cstring code, cstring file, long long line, cstring func_name, cstring func_sig)
+	void report_fatal_error(cstring title, cstring reason, const CallInfo& info)
 	{
-		clog << '\n' << format_message("FATAL ERROR", title, reason, code, file, line, func_name, func_sig) << flush;
+		clog << '\n' << format_message("FATAL ERROR", title, reason, info) << flush;
 
-		throw runtime_error("Fatal error occured");
+		throw runtime_error{"Fatal error occurred"};
 	}
 
-	void report_error(cstring title, cstring reason, cstring code, cstring file, long long line, cstring func_name, cstring func_sig)
+	void report_error(cstring title, cstring reason, const CallInfo& info)
 	{
-		clog << '\n' << format_message("ERROR", title, reason, code, file, line, func_name, func_sig) << flush;
+		clog << '\n' << format_message("ERROR", title, reason, info) << flush;
 	}
 
 	template <typename T>
-	T& deref_impl(T* pointer, cstring message, cstring code, cstring file, long long line, cstring func_name, cstring func_sig)
+	T& deref_impl(T* pointer, cstring message, const CallInfo& info)
 	{
 		if (pointer == nullptr)
-			report_fatal_error(("Null pointer dereference [" + type_name<T*>() + "]").c_str(), message, code, file, line, func_name, func_sig);
+			report_fatal_error(("Null pointer dereference [" + type_name<T*>() + "]").c_str(), message, info);
 
 		return *pointer;
 	}
 
-	void assert_impl(bool condition, cstring message, cstring code, cstring file, long long line, cstring func_name, cstring func_sig)
+	void assert_impl(bool condition, cstring message, const CallInfo& info)
 	{
 		if (!condition)
-			report_error("Condition not satisfied", message, code, file, line, func_name, func_sig);
+			report_error("Condition not satisfied", message, info);
 	}
 }
 
