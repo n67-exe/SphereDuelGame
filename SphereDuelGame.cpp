@@ -142,6 +142,29 @@ struct Vec3
 	float x = 0, y = 0, z = 0;
 };
 
+class GameObject
+{
+public:
+	GameObject(I3DEngine& engine) noexcept
+		: m_engine(engine)
+	{}
+
+	virtual ~GameObject() = default;
+
+	GameObject(const GameObject&) = default;
+	GameObject(GameObject&&) = default;
+
+	GameObject& operator=(const GameObject&) = delete;
+	GameObject& operator=(GameObject&&) = delete;
+
+public:
+	virtual void processInput() = 0;
+	virtual void executeLogic() = 0;
+
+protected:
+	I3DEngine& m_engine;
+};
+
 class Camera
 {
 public:
