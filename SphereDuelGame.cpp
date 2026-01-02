@@ -145,21 +145,42 @@ struct Vec3
 class GameObject
 {
 public:
-	GameObject(I3DEngine& engine) noexcept
+	explicit GameObject(I3DEngine& engine) noexcept
 		: m_engine(engine)
 	{}
 
-	virtual ~GameObject() = default;
+	virtual ~GameObject() noexcept(false) = default;
 
 	GameObject(const GameObject&) = default;
 	GameObject(GameObject&&) = default;
 
-	GameObject& operator=(const GameObject&) = delete;
-	GameObject& operator=(GameObject&&) = delete;
+	GameObject& operator=(const GameObject& other)
+	{
+		if (this == &other)
+			return *this;
+
+		ASSERT(&m_engine == &other.m_engine); // TODO: message
+
+		return *this;
+	}
+
+	GameObject& operator=(GameObject&& other)
+	{
+		if (this == &other)
+			return *this;
+
+		ASSERT(&m_engine == &other.m_engine); // TODO: message
+
+		return *this;
+	}
 
 public:
-	virtual void processInput() = 0;
-	virtual void executeLogic() = 0;
+	virtual void updateBegin() {}
+	virtual void updateEnd() {}
+
+public:
+	virtual ISceneNode& getTransform() = 0;
+	virtual const ISceneNode& getTransform() const = 0;
 
 protected:
 	I3DEngine& m_engine;
