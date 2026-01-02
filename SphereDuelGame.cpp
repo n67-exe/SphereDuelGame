@@ -186,63 +186,89 @@ protected:
 	I3DEngine& m_engine;
 };
 
-class Camera
+class StaticCamera : public GameObject
 {
 public:
-	Camera(I3DEngine& engine) noexcept
-		: m_engine(engine)
+	explicit StaticCamera(I3DEngine& engine)
+		: GameObject(engine), m_camera(DEREF(m_engine.CreateCamera(kManual)))
 	{}
 
-	~Camera() noexcept(false)
+	/* probably unnecessary
+	explicit StaticCamera(const GameObject& object)
+		: GameObject(object), m_camera(DEREF(m_engine.CreateCamera(kManual)))
+	{}
+
+	explicit StaticCamera(GameObject&& object)
+		: GameObject(move(object)), m_camera(DEREF(m_engine.CreateCamera(kManual)))
+	{}
+	*/
+
+	virtual ~StaticCamera() override
 	{
-		if (is_created())
-			destroy();
+		m_engine.RemoveCamera(&m_camera);
 	}
 
-	Camera(const Camera&) = delete;
-	Camera(Camera&&) = delete;
+	StaticCamera(const StaticCamera&) = delete;
+	StaticCamera(StaticCamera&&) = delete;
 
-	Camera& operator=(const Camera&) = delete;
-	Camera& operator=(Camera&&) = delete;
+	StaticCamera& operator=(const StaticCamera&) = delete;
+	StaticCamera& operator=(StaticCamera&&) = delete;
 
 public:
-	void create()
+	void renderScene() /* surprisingly can be made const */
 	{
-		ASSERT(!is_created()); // TODO: message
-		
-		m_camera = m_engine.CreateCamera(kManual, m_position.x, m_position.y, m_position.z);
-	}
-
-	void destroy()
-	{
-		ASSERT(is_created()); // TODO: message
-
-		m_engine.RemoveCamera(m_camera);
-	}
-
-	bool is_created() const noexcept
-	{
-		return m_camera != nullptr;
+		m_engine.DrawScene(&m_camera);
 	}
 
 public:
-	Vec3 get_position() const noexcept
+	virtual ISceneNode& getTransform() override
 	{
-		return m_position;
+		return m_camera;
 	}
 
-	void set_position(Vec3 position)
+	virtual const ISceneNode& getTransform() const override
 	{
-		m_position = position;
-
-		if (is_created())
-			m_camera->SetPosition(m_position.x, m_position.y, m_position.z);
+		return m_camera;
 	}
 
-private:
-	I3DEngine& m_engine;
-	ICamera* m_camera = nullptr;
-	Vec3 m_position; 
+protected:
+	ICamera& m_camera;
+};
+
+struct AxisControls
+{
+	EKeyCode key_pos = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	EKeyCode key_neg = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	float speed = 0;
+
+	float checkDelta(I3DEngine& engine) const
+	{
+		bool held_pos = (key_pos == kMaxKeyCodes ? false : engine.KeyHeld(key_pos));
+		bool held_neg = (key_neg == kMaxKeyCodes ? false : engine.KeyHeld(key_neg));
+
+		if (held_pos && !held_neg)
+			return speed;
+
+		if (held_neg && !held_pos)
+			return -speed;
+
+		return 0;
+	}
+};
+
+class KeyboardControlledCamera : public StaticCamera
+{
+public:
+	using StaticCamera::StaticCamera;
+
+public:
+	virtual void updateBegin() override 
+	{
+		m_camera.Move(x_controls.checkDelta(m_engine), y_controls.checkDelta(m_engine), z_controls.checkDelta(m_engine));
+	}
+
+public:
+	AxisControls x_controls, y_controls, z_controls;
 };
 
 void main() try
