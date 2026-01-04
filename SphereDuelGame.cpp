@@ -220,22 +220,51 @@ protected:
 	I3DEngine& m_engine;
 };
 
+class StaticModel : public GameObject
+{
+public:
+	explicit StaticModel(I3DEngine& engine, IMesh& mesh, Vec3 position = Vec3{})
+		: GameObject(engine), m_model(DEREF(mesh.CreateModel(position.x, position.y, position.z)))
+	{}
+
+	virtual ~StaticModel() override
+	{
+		DEREF(m_model.GetMesh()).RemoveModel(&m_model);
+	}
+
+	StaticModel(const StaticModel&) = delete;
+	StaticModel(StaticModel&&) = delete;
+
+	StaticModel& operator=(const StaticModel&) = delete;
+	StaticModel& operator=(StaticModel&&) = delete;
+
+public:
+	void setSkin(const string& filename, int texture = 0)
+	{
+		m_model.SetSkin(filename, texture);
+	}
+
+public:
+	virtual ISceneNode& getTransform() override
+	{
+		return m_model;
+	}
+
+	virtual const ISceneNode& getTransform() const override
+	{
+		return m_model;
+	}
+
+protected:
+	IModel& m_model;
+};
+
 class StaticCamera : public GameObject
 {
 public:
-	explicit StaticCamera(I3DEngine& engine)
-		: GameObject(engine), m_camera(DEREF(m_engine.CreateCamera(kManual)))
+	explicit StaticCamera(I3DEngine& engine, Vec3 position = Vec3{})
+		: GameObject(engine), m_camera(DEREF(m_engine.CreateCamera(kManual, position.x, position.y, position.z)))
 	{}
-
-	/* probably unnecessary
-	explicit StaticCamera(const GameObject& object)
-		: GameObject(object), m_camera(DEREF(m_engine.CreateCamera(kManual)))
-	{}
-
-	explicit StaticCamera(GameObject&& object)
-		: GameObject(move(object)), m_camera(DEREF(m_engine.CreateCamera(kManual)))
-	{}
-	*/
 
 	virtual ~StaticCamera() override
 	{
