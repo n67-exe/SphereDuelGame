@@ -363,7 +363,7 @@ struct AxisControl
 
 struct MouseControl
 {
-	float speed = 1; // TODO: 0.05
+	float speed = 1;
 	float delta_x = 0, delta_y = 0;
 
 	void updateDelta(I3DEngine& engine)
@@ -433,12 +433,14 @@ public:
 	{
 		KeyboardControlledCamera::processInput();
 
+		// TODO: do something about toggles
 		fly_toggle.updateState(m_engine);
 		mouse_toggle.updateState(m_engine);
 		accelerate_button.updateState(m_engine);
 		mouse_move.updateDelta(m_engine);
 
 		if (!m_engine.IsActive())
+			// not really useful since a bug in TL-Engine hides cursor permanently in this situation
 			mouse_toggle.state.setNewState(false);
 	}
 
@@ -449,7 +451,6 @@ public:
 		static float angle_h = 0;
 		static float angle_v = 0;
 
-		// maybe put it in processInput()?
 		if (mouse_toggle.state.just_changed)
 			mouse_toggle.state.value ? m_engine.StartMouseCapture() : m_engine.StopMouseCapture();
 
