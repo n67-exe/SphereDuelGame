@@ -408,175 +408,152 @@ public:
 	AxisControl x_axis, y_axis, z_axis;
 };
 
+class DebugCamera : public KeyboardControlledCamera
+{
+public:
+	using KeyboardControlledCamera::KeyboardControlledCamera;
+
+private:
+	void moveEuler(float delta, float angle_h, float angle_v)
+	{
+		static const float deg_to_rad = acos(-1.f) / 180.f;
+
+		angle_h *= deg_to_rad;
+		angle_v *= deg_to_rad;
+
+		const float dx = delta * cos(angle_v) * sin(angle_h);
+		const float dy = delta * sin(angle_v) * -1;
+		const float dz = delta * cos(angle_v) * cos(angle_h);
+
+		m_camera.Move(dx, dy, dz);
+	}
+
+public:
+	virtual void processInput() override
+	{
+		KeyboardControlledCamera::processInput();
+
+		fly_toggle.updateState(m_engine);
+		mouse_toggle.updateState(m_engine);
+		accelerate_button.updateState(m_engine);
+		mouse_move.updateDelta(m_engine);
+
+		if (!m_engine.IsActive())
+			mouse_toggle.state.setNewState(false);
+	}
+
+	virtual void updateBegin() override
+	{
+		StaticCamera::updateBegin(); // not KeyboardControlledCamera since we redefine the movement logic here
+
+		static float angle_h = 0;
+		static float angle_v = 0;
+
+		// maybe put it in processInput()?
+		if (mouse_toggle.state.just_changed)
+			mouse_toggle.state.value ? m_engine.StartMouseCapture() : m_engine.StopMouseCapture();
+
+		if (mouse_toggle.state.value)
+		{
+			angle_h += mouse_move.delta_x;
+			angle_v += mouse_move.delta_y;
+
+			angle_h = remainder(remainder(angle_h, 360.f) + 360.f, 360.f);
+			angle_v = max(min(angle_v, 90.f), -90.f);
+
+			m_camera.ResetOrientation();
+
+			m_camera.RotateX(angle_v);
+			m_camera.RotateY(angle_h);
+		}
+
+		const float camera_speed_multiplier = (accelerate_button.state.value ? 3.f : 1.f);
+
+		moveEuler(camera_speed_multiplier * x_axis.delta, angle_h + 90, 0);
+		moveEuler(camera_speed_multiplier * y_axis.delta, angle_h, (fly_toggle.state.value ? angle_v : 0) - 90);
+		moveEuler(camera_speed_multiplier * z_axis.delta, angle_h, (fly_toggle.state.value ? angle_v : 0));
+	}
+
+public:
+	ToggleControl fly_toggle, mouse_toggle;
+	ButtonControl accelerate_button;
+	MouseControl mouse_move;
+};
+
 void main() try
 {
 	// Create a 3D engine (using TLX engine here) and open a window for it
-	I3DEngine& myEngine = *New3DEngine(kTLX);;
+	I3DEngine& engine = DEREF(New3DEngine(kTLX));
 
-	myEngine.StartWindowed();
-	myEngine.StartMouseCapture();
-
-	// Add default folder for meshes and other media
-	myEngine.AddMediaFolder("C:\\ProgramData\\TL-Engine\\Media");
-
-	/**** Set up your scene here ****/
-	IMesh& gridMesh = *myEngine.LoadMesh("Grid.x");
-	IMesh& cubeMesh = *myEngine.LoadMesh("Cube.x");
-	IMesh& sphereMesh = *myEngine.LoadMesh("Sphere.x");
-
-	IModel& grid = *gridMesh.CreateModel(0, 0, 0);
-
-	IModel& sphere = *sphereMesh.CreateModel(0, 10, 0);
-
-	IModel& cube1 = *cubeMesh.CreateModel(-55, 5, 0);
-	IModel& cube2 = *cubeMesh.CreateModel(-55, 15, 0);
-	IModel& cube3 = *cubeMesh.CreateModel(55, 5, 0);
-	IModel& cube4 = *cubeMesh.CreateModel(55, 15, 0);
-
-	ICamera& camera = *myEngine.CreateCamera(kManual);
-
-	const char* skins[] =
+	try
 	{
-		"Clouds.jpg",
-		"Jupiter.jpg",
-		"EarthHi.jpg ",
-		"Mars.jpg",
-		"EarthNight.jpg",
-		"Saturn.jpg",
-		"EarthPlain.jpg",
-		"Pluto.jpg",
-	};
+		//ASSERT(engine.StartFullscreen(1920, 1080));
+		engine.StartWindowed();
 
-	auto nextSkin = [i = 0, &skins]() mutable -> const char*
-	{
-		if (i >= size(skins))
-			i = 0;
+		// Add default folder for meshes and other media
+		//engine.AddMediaFolder("C:\\ProgramData\\TL-Engine\\Media");
+		engine.AddMediaFolder("Media");
 
-		return skins[i++];
-	};
+		/**** Set up your scene here ****/
+		IMesh& water_mesh = DEREF(engine.LoadMesh("water.x"));
+		IMesh& island_mesh = DEREF(engine.LoadMesh("island.x"));
 
-	enum class MoveDirection
-	{
-		Xpos, Xneg,
-		Ypos, Yneg,
-		Zpos, Zneg,
-	};
+		StaticModel water{engine, water_mesh, {0, -5, 0}};
+		StaticModel island{engine, island_mesh, {0, -5, 0}};
 
-	const float initialVelocity = 0.5;
-	const float initialCameraSpeed = 0.5;
-	const float initialCameraRotation = 0.05;
+		StaticCamera camera{engine};
+		DebugCamera debug_camera{engine};
 
-	MoveDirection direction = MoveDirection::Xpos;
+		GameObject* objects[] = {&water, &island, &camera, &debug_camera};
 
-	float velocity = initialVelocity;
-	float cameraSpeed = initialCameraSpeed;
-	float cameraRotation = initialCameraRotation;
+		debug_camera.x_axis = {Key_Right, Key_Left, 1};
+		debug_camera.z_axis = {Key_Up, Key_Down, 1};
+		debug_camera.y_axis = {Key_Shift, Key_Control, 1};
 
-	float angle_h = 0;
-	float angle_v = 0;
+		debug_camera.fly_toggle = {Key_Space};
+		debug_camera.mouse_toggle = {Mouse_LButton};
+		debug_camera.mouse_move.speed = 0.05f;
 
-	bool cameraFly = false;
-	bool mouseCaptured = true;
+		//auto start = std::chrono::steady_clock::now();
 
-	auto cameraMove = [&camera](float delta, float angle_h, float angle_v)
-	{
-		const float degRad = acos(-1.f) / 180.f;
-
-		angle_h *= degRad;
-		angle_v *= degRad;
-
-		float dX = delta * cos(angle_v) * sin(angle_h);
-		float dY = delta * sin(angle_v) * -1;
-		float dZ = delta * cos(angle_v) * cos(angle_h);
-
-		camera.Move(dX, dY, dZ);
-	};
-
-	auto start = std::chrono::steady_clock::now();
-
-	// The main game loop, repeat until engine is stopped
-	while (myEngine.IsRunning())
-	{
-		auto start_frame = std::chrono::steady_clock::now();
-
-		if (myEngine.KeyHit(Key_Escape))
-			myEngine.Stop();
-
-		if (myEngine.KeyHit(Key_Space))
-			cameraFly = !cameraFly;
-
-		if (myEngine.KeyHit(Key_Tab))
+		// The main game loop, repeat until engine is stopped
+		while (engine.IsRunning())
 		{
-			mouseCaptured = !mouseCaptured;
+			const auto start_frame = std::chrono::steady_clock::now();
 
-			mouseCaptured ? myEngine.StartMouseCapture() : myEngine.StopMouseCapture();
+			if (engine.KeyHit(Key_Escape))
+				engine.Stop();
+
+			if (engine.KeyHit(Key_1))
+				engine.StartMouseCapture();
+
+			if (engine.KeyHit(Key_2))
+				engine.StopMouseCapture();
+
+			for (GameObject* object : objects)
+				object->processInput();
+
+			for (GameObject* object : objects)
+				object->updateBegin();
+
+			for (GameObject* object : objects)
+				object->updateEnd();
+
+			// Draw the scene
+			debug_camera.renderScene();
+
+			std::this_thread::sleep_until(start_frame + std::chrono::milliseconds(10));
 		}
+	}
+	catch (...)
+	{
+		engine.Delete();
 
-		cameraSpeed = initialCameraSpeed * (myEngine.KeyHeld(Key_Shift) ? 3 : 1);
-
-		angle_h += myEngine.GetMouseMovementX() * cameraRotation;
-		angle_v += myEngine.GetMouseMovementY() * cameraRotation;
-
-		angle_h = remainder(remainder(angle_h, 360) + 360, 360);
-		angle_v = max(min(angle_v, 90.f), -90.f);
-
-		camera.ResetOrientation();
-
-		camera.RotateX(angle_v);
-		camera.RotateY(angle_h);
-
-		if (myEngine.KeyHeld(Key_A))
-			cameraMove(cameraSpeed, angle_h - 90, 0);
-
-		if (myEngine.KeyHeld(Key_D))
-			cameraMove(cameraSpeed, angle_h + 90, 0);
-
-		if (myEngine.KeyHeld(Key_S))
-			cameraMove(-cameraSpeed, angle_h, cameraFly ? angle_v : 0);
-
-		if (myEngine.KeyHeld(Key_W))
-			cameraMove(cameraSpeed, angle_h, cameraFly ? angle_v : 0);
-
-		if (myEngine.KeyHeld(Key_Q))
-			cameraMove(cameraSpeed, angle_h, (cameraFly ? angle_v : 0) + 90);
-
-		if (myEngine.KeyHeld(Key_E))
-			cameraMove(cameraSpeed, angle_h, (cameraFly ? angle_v : 0) - 90);
-
-		if (sphere.GetX() > 40)
-		{
-			direction = MoveDirection::Xneg;
-
-			sphere.SetSkin(nextSkin());
-		}
-
-		if (sphere.GetX() < -40)
-		{
-			direction = MoveDirection::Xpos;
-
-			sphere.SetSkin(nextSkin());
-		}
-
-		float velocityX = 0;
-
-		switch (direction)
-		{
-		break; case MoveDirection::Xpos:
-			velocityX = velocity;
-		break; case MoveDirection::Xneg:
-			velocityX = -velocity;
-		}
-
-		sphere.MoveX(velocityX);
-
-		// Draw the scene
-		myEngine.DrawScene();
-
-		std::this_thread::sleep_until(start_frame + std::chrono::milliseconds(10));
+		throw;
 	}
 
 	// Delete the 3D engine now we are finished with it
-	myEngine.Delete();
+	engine.Delete();
 }
 catch (const std::exception& ex)
 {
