@@ -142,6 +142,40 @@ struct Vec3
 	float x = 0, y = 0, z = 0;
 };
 
+struct BinaryState
+{
+	bool value = false, just_changed = false;
+
+	void setNewState(bool new_value) noexcept
+	{
+		just_changed = (value != new_value);
+		value = new_value;
+	}
+
+	void keepState() noexcept
+	{
+		just_changed = false;
+	}
+
+	void changeState(bool change = true) noexcept
+	{
+		just_changed = change;
+
+		if (change)
+			value = !value;
+	}
+
+	friend bool operator==(const BinaryState& l, const BinaryState& r) noexcept
+	{
+		return l.value == r.value && l.just_changed == r.just_changed;
+	}
+
+	friend bool operator!=(const BinaryState& l, const BinaryState& r) noexcept
+	{
+		return !(l == r);
+	}
+};
+
 class GameObject
 {
 public:
@@ -235,24 +269,86 @@ protected:
 	ICamera& m_camera;
 };
 
-struct AxisControls
+struct ButtonControl
+{
+	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	BinaryState state;
+
+	void updateState(I3DEngine& engine)
+	{
+		if (!engine.IsActive() || key == kMaxKeyCodes)
+			return state.setNewState(false);
+
+		state.setNewState(engine.KeyHeld(key));
+	}
+};
+
+struct ToggleControl
+{
+	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	BinaryState state;
+
+	void updateState(I3DEngine& engine)
+	{
+		if (!engine.IsActive() || key == kMaxKeyCodes)
+			return state.keepState();
+
+		state.changeState(engine.KeyHit(key));
+	}
+};
+
+struct AxisControl
 {
 	EKeyCode key_pos = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
 	EKeyCode key_neg = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
-	float speed = 0;
+	float speed = 1;
+	float delta = 0;
 
-	float checkDelta(I3DEngine& engine) const
+	void updateDelta(I3DEngine& engine)
 	{
-		bool held_pos = (key_pos == kMaxKeyCodes ? false : engine.KeyHeld(key_pos));
-		bool held_neg = (key_neg == kMaxKeyCodes ? false : engine.KeyHeld(key_neg));
+		if (!engine.IsActive())
+		{
+			delta = 0;
+			return;
+		}
+
+		const bool held_pos = (key_pos == kMaxKeyCodes ? false : engine.KeyHeld(key_pos));
+		const bool held_neg = (key_neg == kMaxKeyCodes ? false : engine.KeyHeld(key_neg));
 
 		if (held_pos && !held_neg)
-			return speed;
+		{
+			delta = speed;
+			return;
+		}
 
 		if (held_neg && !held_pos)
-			return -speed;
+		{
+			delta = -speed;
+			return;
+		}
 
-		return 0;
+		delta = 0;
+	}
+};
+
+struct MouseControl
+{
+	float speed = 1; // TODO: 0.05
+	float delta_x = 0, delta_y = 0;
+
+	void updateDelta(I3DEngine& engine)
+	{
+		if (!engine.IsActive())
+		{
+			engine.GetMouseMovementX();
+			engine.GetMouseMovementY();
+
+			delta_x = delta_y = 0;
+			return;
+		}
+
+		delta_x = static_cast<float>(engine.GetMouseMovementX()) * speed;
+		delta_y = static_cast<float>(engine.GetMouseMovementY()) * speed;
 	}
 };
 
