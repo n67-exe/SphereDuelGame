@@ -181,9 +181,9 @@ struct ButtonControl
 	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
 	BinaryState state;
 
-	void updateState(I3DEngine& engine)
+	void updateState(I3DEngine& engine, bool register_input)
 	{
-		if (!engine.IsActive() || key == kMaxKeyCodes)
+		if (!register_input || key == kMaxKeyCodes)
 			return state.setNewState(false);
 
 		state.setNewState(engine.KeyHeld(key));
@@ -195,9 +195,9 @@ struct ToggleControl
 	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
 	BinaryState state;
 
-	void updateState(I3DEngine& engine)
+	void updateState(I3DEngine& engine, bool register_input)
 	{
-		if (!engine.IsActive() || key == kMaxKeyCodes)
+		if (!register_input || key == kMaxKeyCodes)
 			return state.keepState();
 
 		state.changeState(engine.KeyHit(key));
@@ -211,9 +211,9 @@ struct AxisControl
 	float speed = 1;
 	float delta = 0;
 
-	void updateDelta(I3DEngine& engine)
+	void updateDelta(I3DEngine& engine, bool register_input)
 	{
-		if (!engine.IsActive())
+		if (!register_input)
 		{
 			delta = 0;
 			return;
@@ -243,9 +243,9 @@ struct MouseControl
 	float speed = 1;
 	float delta_x = 0, delta_y = 0;
 
-	void updateDelta(I3DEngine& engine)
+	void updateDelta(I3DEngine& engine, bool register_input)
 	{
-		if (!engine.IsActive())
+		if (!register_input)
 		{
 			engine.GetMouseMovementX();
 			engine.GetMouseMovementY();
@@ -292,7 +292,7 @@ public:
 	}
 
 public:
-	virtual void processInput() {};
+	virtual void processInput([[maybe_unused]] bool register_input) {};
 	virtual void updateBegin() {};
 	virtual void updateEnd() {};
 
@@ -388,13 +388,13 @@ public:
 	using StaticCamera::StaticCamera;
 
 public:
-	virtual void processInput() override
+	virtual void processInput(bool register_input) override
 	{
-		StaticCamera::processInput();
+		StaticCamera::processInput(register_input);
 
-		x_axis.updateDelta(m_engine);
-		y_axis.updateDelta(m_engine);
-		z_axis.updateDelta(m_engine);
+		x_axis.updateDelta(m_engine, register_input);
+		y_axis.updateDelta(m_engine, register_input);
+		z_axis.updateDelta(m_engine, register_input);
 	}
 
 	virtual void updateBegin() override
@@ -429,17 +429,17 @@ private:
 	}
 
 public:
-	virtual void processInput() override
+	virtual void processInput(bool register_input) override
 	{
-		KeyboardControlledCamera::processInput();
+		KeyboardControlledCamera::processInput(register_input);
 
 		// TODO: do something about toggles
-		fly_toggle.updateState(m_engine);
-		mouse_toggle.updateState(m_engine);
-		accelerate_button.updateState(m_engine);
-		mouse_move.updateDelta(m_engine);
+		fly_toggle.updateState(m_engine, register_input);
+		mouse_toggle.updateState(m_engine, register_input);
+		accelerate_button.updateState(m_engine, register_input);
+		mouse_move.updateDelta(m_engine, register_input);
 
-		if (!m_engine.IsActive())
+		if (!register_input)
 			// not really useful since a bug in TL-Engine hides cursor permanently in this situation
 			mouse_toggle.state.setNewState(false);
 	}
@@ -536,6 +536,8 @@ void main() try
 		{
 			const auto start_frame = std::chrono::steady_clock::now();
 
+			const bool active = engine.IsActive();
+
 			if (engine.KeyHit(Key_Escape))
 				engine.Stop();
 
@@ -549,20 +551,22 @@ void main() try
 				active_camera = &debug_camera;
 
 			for (GameObject* object : objects)
-				object->processInput();
+				object->processInput(active);
 
 			for (StaticCamera* camera : cameras)
-				camera->processInput();
+				camera->processInput(active && camera == active_camera);
 
 			for (GameObject* object : objects)
 				object->updateBegin();
 
-			active_camera->updateBegin();
+			for (StaticCamera* camera : cameras)
+				camera->updateBegin();
 
 			for (GameObject* object : objects)
 				object->updateEnd();
 
-			active_camera->updateEnd();
+			for (StaticCamera* camera : cameras)
+				camera->updateEnd();
 
 			// Draw the scene
 			active_camera->renderScene();
