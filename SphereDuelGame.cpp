@@ -502,10 +502,24 @@ void main() try
 		StaticModel water{engine, water_mesh, {0, -5, 0}};
 		StaticModel island{engine, island_mesh, {0, -5, 0}};
 
-		StaticCamera camera{engine};
+		KeyboardControlledCamera camera_1{engine, {0, 200, 0}};
+
+		camera_1.getTransform().RotateLocalX(90);
+
+		camera_1.x_axis = {Key_Right, Key_Left, 1};
+		camera_1.z_axis = {Key_Up, Key_Down, 1};
+
+		StaticCamera camera_2{engine, {150, 150, -150}};
+
+		camera_2.getTransform().RotateLocalY(-45);
+		camera_2.getTransform().RotateLocalX(45);
+
 		DebugCamera debug_camera{engine};
 
-		GameObject* objects[] = {&water, &island, &camera, &debug_camera};
+		StaticCamera* active_camera = &debug_camera;
+
+		StaticCamera* cameras[] = {&camera_1, &camera_2, &debug_camera};
+		GameObject* objects[] = {&water, &island};
 
 		debug_camera.x_axis = {Key_Right, Key_Left, 1};
 		debug_camera.z_axis = {Key_Up, Key_Down, 1};
@@ -526,22 +540,32 @@ void main() try
 				engine.Stop();
 
 			if (engine.KeyHit(Key_1))
-				engine.StartMouseCapture();
+				active_camera = &camera_1;
 
 			if (engine.KeyHit(Key_2))
-				engine.StopMouseCapture();
+				active_camera = &camera_2;
+
+			if (engine.KeyHit(Key_0))
+				active_camera = &debug_camera;
 
 			for (GameObject* object : objects)
 				object->processInput();
 
+			for (StaticCamera* camera : cameras)
+				camera->processInput();
+
 			for (GameObject* object : objects)
 				object->updateBegin();
+
+			active_camera->updateBegin();
 
 			for (GameObject* object : objects)
 				object->updateEnd();
 
+			active_camera->updateEnd();
+
 			// Draw the scene
-			debug_camera.renderScene();
+			active_camera->renderScene();
 
 			std::this_thread::sleep_until(start_frame + std::chrono::milliseconds(10));
 		}
