@@ -209,8 +209,9 @@ public:
 	}
 
 public:
-	virtual void updateBegin() {}
-	virtual void updateEnd() {}
+	virtual void processInput() {};
+	virtual void updateBegin() {};
+	virtual void updateEnd() {};
 
 public:
 	virtual ISceneNode& getTransform() = 0;
@@ -387,13 +388,24 @@ public:
 	using StaticCamera::StaticCamera;
 
 public:
-	virtual void updateBegin() override 
+	virtual void processInput() override
 	{
-		m_camera.Move(x_controls.checkDelta(m_engine), y_controls.checkDelta(m_engine), z_controls.checkDelta(m_engine));
+		StaticCamera::processInput();
+
+		x_axis.updateDelta(m_engine);
+		y_axis.updateDelta(m_engine);
+		z_axis.updateDelta(m_engine);
+	}
+
+	virtual void updateBegin() override
+	{
+		StaticCamera::updateBegin();
+
+		m_camera.Move(x_axis.delta, y_axis.delta, z_axis.delta);
 	}
 
 public:
-	AxisControls x_controls, y_controls, z_controls;
+	AxisControl x_axis, y_axis, z_axis;
 };
 
 void main() try
