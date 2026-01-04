@@ -176,6 +176,89 @@ struct BinaryState
 	}
 };
 
+struct ButtonControl
+{
+	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	BinaryState state;
+
+	void updateState(I3DEngine& engine)
+	{
+		if (!engine.IsActive() || key == kMaxKeyCodes)
+			return state.setNewState(false);
+
+		state.setNewState(engine.KeyHeld(key));
+	}
+};
+
+struct ToggleControl
+{
+	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	BinaryState state;
+
+	void updateState(I3DEngine& engine)
+	{
+		if (!engine.IsActive() || key == kMaxKeyCodes)
+			return state.keepState();
+
+		state.changeState(engine.KeyHit(key));
+	}
+};
+
+struct AxisControl
+{
+	EKeyCode key_pos = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	EKeyCode key_neg = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
+	float speed = 1;
+	float delta = 0;
+
+	void updateDelta(I3DEngine& engine)
+	{
+		if (!engine.IsActive())
+		{
+			delta = 0;
+			return;
+		}
+
+		const bool held_pos = (key_pos == kMaxKeyCodes ? false : engine.KeyHeld(key_pos));
+		const bool held_neg = (key_neg == kMaxKeyCodes ? false : engine.KeyHeld(key_neg));
+
+		if (held_pos && !held_neg)
+		{
+			delta = speed;
+			return;
+		}
+
+		if (held_neg && !held_pos)
+		{
+			delta = -speed;
+			return;
+		}
+
+		delta = 0;
+	}
+};
+
+struct MouseControl
+{
+	float speed = 1;
+	float delta_x = 0, delta_y = 0;
+
+	void updateDelta(I3DEngine& engine)
+	{
+		if (!engine.IsActive())
+		{
+			engine.GetMouseMovementX();
+			engine.GetMouseMovementY();
+
+			delta_x = delta_y = 0;
+			return;
+		}
+
+		delta_x = static_cast<float>(engine.GetMouseMovementX()) * speed;
+		delta_y = static_cast<float>(engine.GetMouseMovementY()) * speed;
+	}
+};
+
 class GameObject
 {
 public:
@@ -297,89 +380,6 @@ public:
 
 protected:
 	ICamera& m_camera;
-};
-
-struct ButtonControl
-{
-	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
-	BinaryState state;
-
-	void updateState(I3DEngine& engine)
-	{
-		if (!engine.IsActive() || key == kMaxKeyCodes)
-			return state.setNewState(false);
-
-		state.setNewState(engine.KeyHeld(key));
-	}
-};
-
-struct ToggleControl
-{
-	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
-	BinaryState state;
-
-	void updateState(I3DEngine& engine)
-	{
-		if (!engine.IsActive() || key == kMaxKeyCodes)
-			return state.keepState();
-
-		state.changeState(engine.KeyHit(key));
-	}
-};
-
-struct AxisControl
-{
-	EKeyCode key_pos = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
-	EKeyCode key_neg = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
-	float speed = 1;
-	float delta = 0;
-
-	void updateDelta(I3DEngine& engine)
-	{
-		if (!engine.IsActive())
-		{
-			delta = 0;
-			return;
-		}
-
-		const bool held_pos = (key_pos == kMaxKeyCodes ? false : engine.KeyHeld(key_pos));
-		const bool held_neg = (key_neg == kMaxKeyCodes ? false : engine.KeyHeld(key_neg));
-
-		if (held_pos && !held_neg)
-		{
-			delta = speed;
-			return;
-		}
-
-		if (held_neg && !held_pos)
-		{
-			delta = -speed;
-			return;
-		}
-
-		delta = 0;
-	}
-};
-
-struct MouseControl
-{
-	float speed = 1;
-	float delta_x = 0, delta_y = 0;
-
-	void updateDelta(I3DEngine& engine)
-	{
-		if (!engine.IsActive())
-		{
-			engine.GetMouseMovementX();
-			engine.GetMouseMovementY();
-
-			delta_x = delta_y = 0;
-			return;
-		}
-
-		delta_x = static_cast<float>(engine.GetMouseMovementX()) * speed;
-		delta_y = static_cast<float>(engine.GetMouseMovementY()) * speed;
-	}
 };
 
 class KeyboardControlledCamera : public StaticCamera
