@@ -62,7 +62,7 @@ namespace internal
 		cstring function_signature;
 	};
 
-	constexpr cstring filename(cstring path)
+	static constexpr cstring filename(cstring path)
 	{
 		if (path == nullptr)
 			return path;
@@ -76,7 +76,7 @@ namespace internal
 		return file;
 	}
 
-	string format_message(cstring category, cstring title, cstring reason, const CallInfo& info)
+	static string format_message(cstring category, cstring title, cstring reason, const CallInfo& info)
 	{
 		constexpr int offset = 12;
 
@@ -109,20 +109,20 @@ namespace internal
 	}
 
 	[[noreturn]]
-	void report_fatal_error(cstring title, cstring reason, const CallInfo& info)
+	static void report_fatal_error(cstring title, cstring reason, const CallInfo& info)
 	{
 		clog << '\n' << format_message("FATAL ERROR", title, reason, info) << flush;
 
 		throw runtime_error{"Fatal error occurred"};
 	}
 
-	void report_error(cstring title, cstring reason, const CallInfo& info)
+	static void report_error(cstring title, cstring reason, const CallInfo& info)
 	{
 		clog << '\n' << format_message("ERROR", title, reason, info) << flush;
 	}
 
 	template <typename T>
-	T& deref_impl(T* pointer, cstring message, const CallInfo& info)
+	static T& deref_impl(T* pointer, cstring message, const CallInfo& info)
 	{
 		if (pointer == nullptr)
 			report_fatal_error(("Null pointer dereference [" + type_name<T*>() + "]").c_str(), message, info);
@@ -130,7 +130,7 @@ namespace internal
 		return *pointer;
 	}
 
-	void assert_impl(bool condition, cstring message, const CallInfo& info)
+	static void assert_impl(bool condition, cstring message, const CallInfo& info)
 	{
 		if (!condition)
 			report_error("Condition not satisfied", message, info);
