@@ -60,6 +60,7 @@ namespace internal
 		long long line = 0;
 		cstring function_name = nullptr;
 		cstring function_signature = nullptr;
+		cstring call_stack = nullptr;
 	};
 
 	static constexpr cstring filename(cstring path)
@@ -104,6 +105,9 @@ namespace internal
 		else 
 			if (info.function_name)
 				message << setw(offset) << "  function" << " : " << info.function_name << '\n';
+
+		if (info.call_stack)
+			message << setw(offset) << "  call stack" << " : " << info.call_stack << '\n';
 
 		return message.str();
 	}
