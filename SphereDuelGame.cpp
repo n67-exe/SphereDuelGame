@@ -77,17 +77,17 @@ namespace internal
 		return file;
 	}
 
-	static string format_message(cstring category, cstring title, cstring reason, const CallInfo& info)
+	static string format_message(cstring category, cstring title, cstring description, const CallInfo& info)
 	{
-		constexpr int offset = 12;
+		constexpr int offset = 13;
 
 		ostringstream message;
 
 		message << left;
 		message << setw(offset) << (category ? category : "") << " : " << (title ? title : "") << '\n';
 
-		if (reason)
-			message << setw(offset) << "  reason" << " : " << reason << '\n';
+		if (description)
+			message << setw(offset) << "  description" << " : " << description << '\n';
 
 		if (info.code)
 			message << setw(offset) << "  code" << " : " << info.code << '\n';
@@ -113,21 +113,21 @@ namespace internal
 	}
 
 	[[noreturn]]
-	static void report_fatal_error(cstring title, cstring reason, const CallInfo& info = {})
+	static void report_fatal_error(cstring title, cstring description, const CallInfo& info = {})
 	{
-		clog << '\n' << format_message("FATAL ERROR", title, reason, info) << flush;
+		clog << '\n' << format_message("FATAL ERROR", title, description, info) << flush;
 
-		throw runtime_error{"Fatal error occurred"};
+		throw runtime_error{"Fatal error"};
 	}
 
-	static void report_error(cstring title, cstring reason, const CallInfo& info = {})
+	static void report_error(cstring title, cstring description, const CallInfo& info = {})
 	{
-		clog << '\n' << format_message("ERROR", title, reason, info) << flush;
+		clog << '\n' << format_message("ERROR", title, description, info) << flush;
 	}
 
-	static void report_exception(cstring title, cstring reason, const CallInfo& info = {})
+	static void report_exception(cstring title, cstring description, const CallInfo& info = {})
 	{
-		clog << '\n' << format_message("EXCEPTION", title, reason, info) << flush;
+		clog << '\n' << format_message("EXCEPTION", title, description, info) << flush;
 	}
 
 	template <typename T>
