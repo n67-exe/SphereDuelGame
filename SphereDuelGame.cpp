@@ -597,6 +597,20 @@ catch (const exception& ex)
 {
 	internal::report_exception("std::exception", ex.what());
 }
+catch (const CTLException& ex)
+{
+	// since we use c-style strings, we need to make sure returned std::string will outlive them
+	string description = ex.Description();
+	string call_stack = ex.CallStack();
+	string file_path = ex.FileName();
+
+	const internal::CallInfo info{nullptr, file_path.c_str(), ex.LineNum(), nullptr, nullptr, call_stack.c_str()};
+
+	internal::report_exception("tle::CTLException", description.c_str(), info);
+
+	// not reliable
+	// ex.Display();
+}
 catch (...)
 {
 	internal::report_exception("unknown", nullptr);
