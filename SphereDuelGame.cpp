@@ -515,8 +515,8 @@ void main() try
 
 		camera_1.getTransform().RotateLocalX(90);
 
-		camera_1.x_axis = {Key_Right, Key_Left, 1};
-		camera_1.z_axis = {Key_Up, Key_Down, 1};
+		camera_1.x_axis = {Key_Right, Key_Left, 1.5};
+		camera_1.z_axis = {Key_Up, Key_Down, 1.5};
 
 		StaticCamera camera_2{engine, {150, 150, -150}};
 
