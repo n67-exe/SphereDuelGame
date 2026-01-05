@@ -422,8 +422,8 @@ private:
 		angle_v *= deg_to_rad;
 
 		const float dx = delta * cos(angle_v) * sin(angle_h);
-		const float dy = delta * sin(angle_v) * -1;
 		const float dz = delta * cos(angle_v) * cos(angle_h);
+		const float dy = delta * sin(angle_v) * -1;
 
 		m_camera.Move(dx, dy, dz);
 	}
@@ -471,8 +471,8 @@ public:
 		const float camera_speed_multiplier = (accelerate_button.state.value ? 3.f : 1.f);
 
 		moveEuler(camera_speed_multiplier * x_axis.delta, angle_h + 90, 0);
-		moveEuler(camera_speed_multiplier * y_axis.delta, angle_h, (fly_toggle.state.value ? angle_v : 0) - 90);
 		moveEuler(camera_speed_multiplier * z_axis.delta, angle_h, (fly_toggle.state.value ? angle_v : 0));
+		moveEuler(camera_speed_multiplier * y_axis.delta, angle_h, (fly_toggle.state.value ? angle_v : 0) - 90);
 	}
 
 public:
