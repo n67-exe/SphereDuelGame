@@ -530,11 +530,12 @@ void main() try
 		StaticCamera* cameras[] = {&camera_1, &camera_2, &debug_camera};
 		GameObject* objects[] = {&water, &island};
 
-		debug_camera.x_axis = {Key_Right, Key_Left, 1};
-		debug_camera.z_axis = {Key_Up, Key_Down, 1};
-		debug_camera.y_axis = {Key_Shift, Key_Control, 1};
+		debug_camera.x_axis = {Key_L, Key_J, 1};
+		debug_camera.z_axis = {Key_I, Key_K, 1};
+		debug_camera.y_axis = {Key_Y, Key_H, 1};
 
-		debug_camera.fly_toggle = {Key_Space};
+		debug_camera.fly_toggle = {Key_U};
+		debug_camera.accelerate_button = {Mouse_RButton};
 		debug_camera.mouse_toggle = {Mouse_LButton};
 		debug_camera.mouse_move.speed = 0.05f;
 
