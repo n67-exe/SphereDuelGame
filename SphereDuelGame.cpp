@@ -121,14 +121,9 @@ namespace internal
 		clog << '\n' << format_message("ERROR", title, reason, info) << flush;
 	}
 
-	static void report_exception(cstring title, cstring reason, const CallInfo& info = {}, cstring additional = nullptr)
+	static void report_exception(cstring title, cstring reason, const CallInfo& info = {})
 	{
-		clog << '\n' << format_message("EXCEPTION", title, reason, info);
-
-		if (additional)
-			clog << '\n' << additional;
-		
-		clog << flush;
+		clog << '\n' << format_message("EXCEPTION", title, reason, info) << flush;
 	}
 
 	template <typename T>
