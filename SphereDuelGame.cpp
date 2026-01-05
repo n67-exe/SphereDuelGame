@@ -499,6 +499,8 @@ enum class GameState
 	GameOver,
 };
 
+constexpr bool debug_mode = false;
+
 void main() try
 {
 	// Create a 3D engine (using TLX engine here) and open a window for it
@@ -535,12 +537,7 @@ void main() try
 		camera_2.getTransform().RotateLocalY(-45);
 		camera_2.getTransform().RotateLocalX(45);
 
-		DebugCamera debug_camera{engine};
-
-		StaticCamera* active_camera = &debug_camera;
-
-		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
-		StaticModel* const static_objects[] = {&water, &island, &skybox};
+		DebugCamera debug_camera{engine, {0, 10, 0}};
 
 		debug_camera.x_axis = {Key_L, Key_J, 1};
 		debug_camera.z_axis = {Key_I, Key_K, 1};
@@ -550,6 +547,11 @@ void main() try
 		debug_camera.accelerate_button = {Mouse_RButton};
 		debug_camera.mouse_toggle = {Mouse_LButton};
 		debug_camera.mouse_move.speed = 0.05f;
+
+		StaticModel* const static_objects[] = {&water, &island, &skybox};
+		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
+
+		StaticCamera* active_camera = &camera_1;
 
 		GameState state = GameState::Playing;
 
@@ -563,15 +565,6 @@ void main() try
 			if (engine.KeyHit(Key_Escape))
 				engine.Stop();
 
-			if (engine.KeyHit(Key_1))
-				active_camera = &camera_1;
-
-			if (engine.KeyHit(Key_2))
-				active_camera = &camera_2;
-
-			if (engine.KeyHit(Key_0))
-				active_camera = &debug_camera;
-
 			if (engine.KeyHit(Key_P))
 				switch (state)
 				{
@@ -581,6 +574,18 @@ void main() try
 				break; case GameState::Paused:
 					state = GameState::Playing;
 				}
+
+			if (state != GameState::Paused)
+			{
+				if (engine.KeyHit(Key_1))
+					active_camera = &camera_1;
+
+				if (engine.KeyHit(Key_2))
+					active_camera = &camera_2;
+
+				if (engine.KeyHit(Key_0) && debug_mode)
+					active_camera = &debug_camera;
+			}
 
 			const bool register_input = engine.IsActive() && state == GameState::Playing;
 
