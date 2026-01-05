@@ -6,17 +6,19 @@
 #include <string>
 #include <thread>
 
-#include <TL-Engine.h>	// TL-Engine include file and namespace
+#include <TL-Engine.h>
 
 using namespace tle;
 using namespace std;
 
+// full function signature (readable)
 #ifdef _MSC_VER
 #define FUNCTION_SIGNATURE __FUNCSIG__
 #else
 #define FUNCTION_SIGNATURE __PRETTY_FUNCTION__
 #endif // _MSC_VER
 
+// c-style string
 using cstring = const char*;
 
 // optional second parameter is the message (message is always evaluated) // TODO: fix evaluation
@@ -56,6 +58,7 @@ namespace internal
 		return function.substr(prefix.size(), function.size() - prefix.size() - suffix.size()); // strip prefix and suffix
 	}
 
+	// information provided by the caller
 	struct CallInfo
 	{
 		cstring code = nullptr;
@@ -66,6 +69,7 @@ namespace internal
 		cstring call_stack = nullptr;
 	};
 
+	// extract filename from path
 	static constexpr cstring filename(cstring path)
 	{
 		if (path == nullptr)
@@ -188,6 +192,7 @@ struct BinaryState
 	}
 };
 
+// ON when actively pressed
 struct ButtonControl
 {
 	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
@@ -202,6 +207,7 @@ struct ButtonControl
 	}
 };
 
+// switches between ON and OFF when pressed
 struct ToggleControl
 {
 	EKeyCode key = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
@@ -216,6 +222,7 @@ struct ToggleControl
 	}
 };
 
+// has 2 buttons that increase and decrease the value, reports delta
 struct AxisControl
 {
 	EKeyCode key_pos = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
@@ -250,6 +257,7 @@ struct AxisControl
 	}
 };
 
+// processes mouse X and Y movement, reports delta
 struct MouseControl
 {
 	float speed = 1;
@@ -271,6 +279,7 @@ struct MouseControl
 	}
 };
 
+// abstract game engine object, transformable
 class GameObject
 {
 public:
@@ -447,14 +456,13 @@ public:
 	{
 		KeyboardControlledCamera::processInput(register_input);
 
-		// TODO: do something about toggles
 		fly_toggle.updateState(m_engine, register_input);
 		mouse_toggle.updateState(m_engine, register_input);
 		accelerate_button.updateState(m_engine, register_input);
 		mouse_move.updateDelta(m_engine, register_input);
 
 		// stop mouse capture if we start ignoring user input
-		// if the window loses focus, a bug in TL-Engine hides the cursor permanently
+		// if the window loses focus, a bug in TL-Engine hides the cursor permanently over the window
 		if (!register_input)
 			mouse_toggle.state.setNewState(false);
 
@@ -504,30 +512,31 @@ enum class GameState
 	GameOver,
 };
 
+// Enables debug camera (key 0)
 constexpr bool debug_mode = false;
 
 void main() try
 {
-	// Create a 3D engine (using TLX engine here) and open a window for it
+	// Create a 3D engine (using TLX engine here)
 	I3DEngine& engine = DEREF(New3DEngine(kTLX));
 
 	try
 	{
-		// Fullscreen doesn't work
+		// Fullscreen window crashes if it's not in focus
 		//ASSERT(engine.StartFullscreen(1920, 1080));
 		engine.StartWindowed();
 
-		// Add default folder for meshes and other media
-		//engine.AddMediaFolder("C:\\ProgramData\\TL-Engine\\Media");
+		// Add media folder
 		engine.AddMediaFolder("Media");
 
-		/**** Set up your scene here ****/
+		// Load resources
 		IMesh& water_mesh = DEREF(engine.LoadMesh("water.x"));
 		IMesh& island_mesh = DEREF(engine.LoadMesh("island.x"));
 		IMesh& skybox_mesh = DEREF(engine.LoadMesh("sky.x"));
 
 		IFont& main_font = DEREF(engine.LoadFont("Comic Sans MS", 36));
 
+		// Initialize game objects
 		StaticModel water{engine, water_mesh, {0, -5, 0}};
 		StaticModel island{engine, island_mesh, {0, -5, 0}};
 		StaticModel skybox{engine, skybox_mesh, {0, -960, 0}};
@@ -558,15 +567,17 @@ void main() try
 		StaticModel* const static_objects[] = {&water, &island, &skybox};
 		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
 
+		// Set initial game state
 		StaticCamera* active_camera = &camera_1;
 
 		GameState state = GameState::Playing;
 
 		int player_points = 0;
 
-		// The main game loop, repeat until engine is stopped
+		// Main game loop
 		while (engine.IsRunning())
 		{
+			// Start of the current iteration
 			const auto start_frame = std::chrono::steady_clock::now();
 
 			if (engine.KeyHit(Key_Escape))
@@ -628,11 +639,11 @@ void main() try
 				main_font.Draw("You Lose", engine.GetWidth() / 2, engine.GetHeight() / 2, kRed, kCentre, kVCentre);
 			}
 
-			// Draw the scene
+			// Render the scene
 			DEREF(active_camera).renderScene();
 
-			// 60 FPS
-			this_thread::sleep_until(start_frame + chrono::duration<int, std::ratio<1, 60>>(1));
+			// End of the current iteration, calculate sleep time
+			this_thread::sleep_until(start_frame + chrono::duration<int, std::ratio<1, 60>>(1)); // 60 FPS
 		}
 	}
 	catch (...)
@@ -642,9 +653,9 @@ void main() try
 		throw;
 	}
 
-	// Delete the 3D engine now we are finished with it
 	engine.Delete();
 }
+// Report exceptions:
 catch (const exception& ex)
 {
 	internal::report_exception("std::exception", ex.what());
@@ -660,8 +671,7 @@ catch (const CTLException& ex)
 
 	internal::report_exception("tle::CTLException", description.c_str(), info);
 
-	// not reliable
-	// ex.Display();
+	// ex.Display() is not reliable
 }
 catch (...)
 {
