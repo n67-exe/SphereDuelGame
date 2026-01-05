@@ -507,9 +507,11 @@ void main() try
 		/**** Set up your scene here ****/
 		IMesh& water_mesh = DEREF(engine.LoadMesh("water.x"));
 		IMesh& island_mesh = DEREF(engine.LoadMesh("island.x"));
+		IMesh& skybox_mesh = DEREF(engine.LoadMesh("sky.x"));
 
 		StaticModel water{engine, water_mesh, {0, -5, 0}};
 		StaticModel island{engine, island_mesh, {0, -5, 0}};
+		StaticModel skybox{engine, skybox_mesh, {0, -960, 0}};
 
 		KeyboardControlledCamera camera_1{engine, {0, 200, 0}};
 
