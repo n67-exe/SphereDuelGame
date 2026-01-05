@@ -292,7 +292,7 @@ public:
 	}
 
 public:
-	virtual void processInput([[maybe_unused]] bool register_input) {};
+	virtual void processInput(bool register_input) {};
 	virtual void updateBegin() {};
 	virtual void updateEnd() {};
 
