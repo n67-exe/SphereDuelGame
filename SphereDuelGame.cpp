@@ -491,6 +491,14 @@ public:
 	MouseControl mouse_move;
 };
 
+enum class GameState
+{
+	Playing,
+	Paused,
+	GameWon,
+	GameOver,
+};
+
 void main() try
 {
 	// Create a 3D engine (using TLX engine here) and open a window for it
@@ -543,14 +551,14 @@ void main() try
 		debug_camera.mouse_toggle = {Mouse_LButton};
 		debug_camera.mouse_move.speed = 0.05f;
 
+		GameState state = GameState::Playing;
+
 		//auto start = std::chrono::steady_clock::now();
 
 		// The main game loop, repeat until engine is stopped
 		while (engine.IsRunning())
 		{
 			const auto start_frame = std::chrono::steady_clock::now();
-
-			const bool active = engine.IsActive();
 
 			if (engine.KeyHit(Key_Escape))
 				engine.Stop();
@@ -564,23 +572,38 @@ void main() try
 			if (engine.KeyHit(Key_0))
 				active_camera = &debug_camera;
 
+			if (engine.KeyHit(Key_P))
+				switch (state)
+				{
+				break; case GameState::Playing:
+					state = GameState::Paused;
+
+				break; case GameState::Paused:
+					state = GameState::Playing;
+				}
+
+			const bool register_input = engine.IsActive() && state == GameState::Playing;
+
 			for (GameObject* static_object : static_objects)
-				DEREF(static_object).processInput(active);
+				DEREF(static_object).processInput(register_input);
 
 			for (StaticCamera* camera : cameras)
-				DEREF(camera).processInput(active && camera == active_camera);
+				DEREF(camera).processInput(register_input && camera == active_camera);
 
-			for (GameObject* static_object : static_objects)
-				DEREF(static_object).updateBegin();
+			if (state != GameState::Paused)
+			{
+				for (GameObject* static_object : static_objects)
+					DEREF(static_object).updateBegin();
 
-			for (StaticCamera* camera : cameras)
-				DEREF(camera).updateBegin();
+				for (StaticCamera* camera : cameras)
+					DEREF(camera).updateBegin();
 
-			for (GameObject* static_object : static_objects)
-				DEREF(static_object).updateEnd();
+				for (GameObject* static_object : static_objects)
+					DEREF(static_object).updateEnd();
 
-			for (StaticCamera* camera : cameras)
-				DEREF(camera).updateEnd();
+				for (StaticCamera* camera : cameras)
+					DEREF(camera).updateEnd();
+			}
 
 			// Draw the scene
 			DEREF(active_camera).renderScene();
