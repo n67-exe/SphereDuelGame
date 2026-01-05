@@ -408,7 +408,7 @@ public:
 	AxisControl x_axis, y_axis, z_axis;
 };
 
-class DebugCamera : public KeyboardControlledCamera
+class DebugCamera final : public KeyboardControlledCamera
 {
 public:
 	using KeyboardControlledCamera::KeyboardControlledCamera;
