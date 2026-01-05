@@ -153,6 +153,19 @@ namespace internal
 	}
 }
 
+// data from https://www.wolframalpha.com
+namespace numbers
+{
+	template <typename T>
+	constexpr T pi_v = 3.141592653589793238462643383279503L; // = pi
+
+	template <typename T>
+	constexpr T deg_to_rad_v = 0.01745329251994329576923690768488613L; // = pi / 180
+
+	constexpr float pi = pi_v<float>;
+	constexpr float deg_to_rad = deg_to_rad_v<float>;
+}
+
 struct Vec3
 {
 	float x = 0, y = 0, z = 0;
@@ -439,10 +452,8 @@ public:
 private:
 	void moveEuler(float delta, float angle_h, float angle_v)
 	{
-		static const float deg_to_rad = acos(-1.f) / 180.f;
-
-		angle_h *= deg_to_rad;
-		angle_v *= deg_to_rad;
+		angle_h *= numbers::deg_to_rad;
+		angle_v *= numbers::deg_to_rad;
 
 		const float dx = delta * cos(angle_v) * sin(angle_h);
 		const float dz = delta * cos(angle_v) * cos(angle_h);
