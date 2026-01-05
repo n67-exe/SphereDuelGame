@@ -28,7 +28,7 @@ namespace internal
 {
 	// C++ 14 implementation of my C++ 20 implementation based on https://stackoverflow.com/questions/81870/is-it-possible-to-print-the-name-of-a-variables-type-in-standard-c/56766138#56766138
 	template <typename T>
-	auto type_name() // auto to avoid complicated signature 
+	auto type_name() // auto to avoid complicated signature, returns std::string
 	{
 		string function = FUNCTION_SIGNATURE, prefix, suffix;
 
@@ -415,6 +415,8 @@ public:
 
 public:
 	AxisControl x_axis, y_axis, z_axis;
+
+	// TODO: bounds
 };
 
 class DebugCamera final : public KeyboardControlledCamera
@@ -572,7 +574,6 @@ void main() try
 				{
 				break; case GameState::Playing:
 					state = GameState::Paused;
-
 				break; case GameState::Paused:
 					state = GameState::Playing;
 				}
@@ -589,7 +590,7 @@ void main() try
 					active_camera = &debug_camera;
 			}
 
-			const bool register_input = engine.IsActive() && state == GameState::Playing;
+			const bool register_input = (engine.IsActive() && state == GameState::Playing);
 
 			for (StaticModel* const static_object : static_objects)
 				DEREF(static_object).processInput(register_input);
@@ -661,5 +662,5 @@ catch (const CTLException& ex)
 }
 catch (...)
 {
-	internal::report_exception("unknown", nullptr);
+	internal::report_exception("Unknown", nullptr);
 }
