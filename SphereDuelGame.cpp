@@ -448,9 +448,13 @@ public:
 		accelerate_button.updateState(m_engine, register_input);
 		mouse_move.updateDelta(m_engine, register_input);
 
+		// stop mouse capture if we start ignoring user input
+		// if the window loses focus, a bug in TL-Engine hides the cursor permanently
 		if (!register_input)
-			// not really useful since a bug in TL-Engine hides cursor permanently in this situation
 			mouse_toggle.state.setNewState(false);
+
+		if (mouse_toggle.state.just_changed)
+			mouse_toggle.state.value ? m_engine.StartMouseCapture() : m_engine.StopMouseCapture();
 	}
 
 	virtual void updateBegin() override
@@ -459,9 +463,6 @@ public:
 
 		static float angle_h = 0;
 		static float angle_v = 0;
-
-		if (mouse_toggle.state.just_changed)
-			mouse_toggle.state.value ? m_engine.StartMouseCapture() : m_engine.StopMouseCapture();
 
 		if (mouse_toggle.state.value)
 		{
@@ -497,6 +498,7 @@ void main() try
 
 	try
 	{
+		// Fullscreen doesn't work
 		//ASSERT(engine.StartFullscreen(1920, 1080));
 		engine.StartWindowed();
 
@@ -583,6 +585,7 @@ void main() try
 			// Draw the scene
 			DEREF(active_camera).renderScene();
 
+			// 60 FPS
 			this_thread::sleep_until(start_frame + chrono::duration<int, std::ratio<1, 60>>(1));
 		}
 	}
