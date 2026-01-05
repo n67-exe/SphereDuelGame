@@ -521,6 +521,8 @@ void main() try
 		IMesh& island_mesh = DEREF(engine.LoadMesh("island.x"));
 		IMesh& skybox_mesh = DEREF(engine.LoadMesh("sky.x"));
 
+		IFont& main_font = DEREF(engine.LoadFont("Comic Sans MS", 36));
+
 		StaticModel water{engine, water_mesh, {0, -5, 0}};
 		StaticModel island{engine, island_mesh, {0, -5, 0}};
 		StaticModel skybox{engine, skybox_mesh, {0, -960, 0}};
@@ -555,7 +557,7 @@ void main() try
 
 		GameState state = GameState::Playing;
 
-		//auto start = std::chrono::steady_clock::now();
+		int player_points = 0;
 
 		// The main game loop, repeat until engine is stopped
 		while (engine.IsRunning())
@@ -608,6 +610,18 @@ void main() try
 
 				for (StaticCamera* const camera : cameras)
 					DEREF(camera).updateEnd();
+			}
+
+			main_font.Draw("Points: " + to_string(player_points), engine.GetWidth(), 0, kBlack, kRight, kTop);
+
+			switch (state)
+			{
+			break; case GameState::Paused:
+				main_font.Draw("Paused", engine.GetWidth() / 2, engine.GetHeight() / 2, kBlack, kCentre, kVCentre);
+			break; case GameState::GameWon:
+				main_font.Draw("Congrats, You WON", engine.GetWidth() / 2, engine.GetHeight() / 2, kGreen, kCentre, kVCentre);
+			break; case GameState::GameOver:
+				main_font.Draw("You Lose", engine.GetWidth() / 2, engine.GetHeight() / 2, kRed, kCentre, kVCentre);
 			}
 
 			// Draw the scene
