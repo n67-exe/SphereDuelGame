@@ -580,7 +580,7 @@ void main() try
 			// Draw the scene
 			active_camera->renderScene();
 
-			std::this_thread::sleep_until(start_frame + std::chrono::milliseconds(10));
+			this_thread::sleep_until(start_frame + chrono::duration<int, std::ratio<1, 60>>(1));
 		}
 	}
 	catch (...)
