@@ -55,11 +55,11 @@ namespace internal
 
 	struct CallInfo
 	{
-		cstring code;
-		cstring file;
-		long long line;
-		cstring function_name;
-		cstring function_signature;
+		cstring code = nullptr;
+		cstring file = nullptr;
+		long long line = 0;
+		cstring function_name = nullptr;
+		cstring function_signature = nullptr;
 	};
 
 	static constexpr cstring filename(cstring path)
@@ -109,14 +109,14 @@ namespace internal
 	}
 
 	[[noreturn]]
-	static void report_fatal_error(cstring title, cstring reason, const CallInfo& info)
+	static void report_fatal_error(cstring title, cstring reason, const CallInfo& info = {})
 	{
 		clog << '\n' << format_message("FATAL ERROR", title, reason, info) << flush;
 
 		throw runtime_error{"Fatal error occurred"};
 	}
 
-	static void report_error(cstring title, cstring reason, const CallInfo& info)
+	static void report_error(cstring title, cstring reason, const CallInfo& info = {})
 	{
 		clog << '\n' << format_message("ERROR", title, reason, info) << flush;
 	}
