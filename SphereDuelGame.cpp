@@ -530,7 +530,7 @@ void main() try
 		StaticCamera* active_camera = &debug_camera;
 
 		StaticCamera* cameras[] = {&camera_1, &camera_2, &debug_camera};
-		GameObject* objects[] = {&water, &island};
+		StaticModel* static_objects[] = {&water, &island, &skybox};
 
 		debug_camera.x_axis = {Key_L, Key_J, 1};
 		debug_camera.z_axis = {Key_I, Key_K, 1};
@@ -562,26 +562,26 @@ void main() try
 			if (engine.KeyHit(Key_0))
 				active_camera = &debug_camera;
 
-			for (GameObject* object : objects)
-				object->processInput(active);
+			for (GameObject* static_object : static_objects)
+				DEREF(static_object).processInput(active);
 
 			for (StaticCamera* camera : cameras)
-				camera->processInput(active && camera == active_camera);
+				DEREF(camera).processInput(active && camera == active_camera);
 
-			for (GameObject* object : objects)
-				object->updateBegin();
-
-			for (StaticCamera* camera : cameras)
-				camera->updateBegin();
-
-			for (GameObject* object : objects)
-				object->updateEnd();
+			for (GameObject* static_object : static_objects)
+				DEREF(static_object).updateBegin();
 
 			for (StaticCamera* camera : cameras)
-				camera->updateEnd();
+				DEREF(camera).updateBegin();
+
+			for (GameObject* static_object : static_objects)
+				DEREF(static_object).updateEnd();
+
+			for (StaticCamera* camera : cameras)
+				DEREF(camera).updateEnd();
 
 			// Draw the scene
-			active_camera->renderScene();
+			DEREF(active_camera).renderScene();
 
 			this_thread::sleep_until(start_frame + chrono::duration<int, std::ratio<1, 60>>(1));
 		}
