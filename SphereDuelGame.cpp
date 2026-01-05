@@ -593,12 +593,11 @@ void main() try
 	// Delete the 3D engine now we are finished with it
 	engine.Delete();
 }
-catch (const std::exception& ex)
+catch (const exception& ex)
 {
-	clog << "\nCaught std::exception:\n";
-	clog << ex.what() << flush;
+	internal::report_exception("std::exception", ex.what());
 }
 catch (...)
 {
-	clog << "\nCaught unknown exception." << flush;
+	internal::report_exception("unknown", nullptr);
 }
