@@ -649,9 +649,9 @@ catch (const exception& ex)
 catch (const CTLException& ex)
 {
 	// since we use c-style strings, we need to make sure returned std::string will outlive them
-	string description = ex.Description();
-	string call_stack = ex.CallStack();
-	string file_path = ex.FileName();
+	const string description = ex.Description();
+	const string call_stack = ex.CallStack();
+	const string file_path = ex.FileName();
 
 	const internal::CallInfo info{nullptr, file_path.c_str(), ex.LineNum(), nullptr, nullptr, call_stack.c_str()};
 
