@@ -377,6 +377,53 @@ protected:
 	IModel& m_model;
 };
 
+class DynamicModel : public StaticModel
+{
+public:
+	explicit DynamicModel(I3DEngine& engine, IMesh& mesh, Vec3 position = Vec3{}, float radius = 0)
+		: StaticModel(engine, mesh, position), radius(radius)
+	{}
+
+public:
+	Vec3 velocity;
+	float radius;
+	float timestamp = 0; // relative to the current frame
+};
+
+class SphereDynamicModel : public DynamicModel
+{
+public:
+	using DynamicModel::DynamicModel;
+
+public:
+	void setOrientation(float angle_horizontal = 0)
+	{
+		angle = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
+
+		m_model.ResetOrientation();
+
+		m_model.RotateY(angle);
+	}
+
+public:
+	virtual void updateBegin() override
+	{
+		DynamicModel::updateBegin();
+
+		setOrientation(angle + rotation_axis.delta);
+
+		const float angle_rad = angle * numbers::deg_to_rad;
+
+		velocity = Vec3{forward_axis.delta * sin(angle_rad), 0, forward_axis.delta * cos(angle_rad)};
+	}
+
+public:
+	AxisControl forward_axis, rotation_axis;
+
+protected:
+	float angle;
+};
+
 class StaticCamera : public GameObject
 {
 public:
