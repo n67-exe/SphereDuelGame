@@ -539,8 +539,8 @@ void main() try
 
 		StaticCamera* active_camera = &debug_camera;
 
-		StaticCamera* cameras[] = {&camera_1, &camera_2, &debug_camera};
-		StaticModel* static_objects[] = {&water, &island, &skybox};
+		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
+		StaticModel* const static_objects[] = {&water, &island, &skybox};
 
 		debug_camera.x_axis = {Key_L, Key_J, 1};
 		debug_camera.z_axis = {Key_I, Key_K, 1};
@@ -584,24 +584,24 @@ void main() try
 
 			const bool register_input = engine.IsActive() && state == GameState::Playing;
 
-			for (GameObject* static_object : static_objects)
+			for (StaticModel* const static_object : static_objects)
 				DEREF(static_object).processInput(register_input);
 
-			for (StaticCamera* camera : cameras)
+			for (StaticCamera* const camera : cameras)
 				DEREF(camera).processInput(register_input && camera == active_camera);
 
 			if (state != GameState::Paused)
 			{
-				for (GameObject* static_object : static_objects)
+				for (StaticModel* const static_object : static_objects)
 					DEREF(static_object).updateBegin();
 
-				for (StaticCamera* camera : cameras)
+				for (StaticCamera* const camera : cameras)
 					DEREF(camera).updateBegin();
 
-				for (GameObject* static_object : static_objects)
+				for (StaticModel* const static_object : static_objects)
 					DEREF(static_object).updateEnd();
 
-				for (StaticCamera* camera : cameras)
+				for (StaticCamera* const camera : cameras)
 					DEREF(camera).updateEnd();
 			}
 
