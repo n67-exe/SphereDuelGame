@@ -227,7 +227,7 @@ struct AxisControl
 {
 	EKeyCode key_pos = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
 	EKeyCode key_neg = kMaxKeyCodes; // kMaxKeyCodes if no key is assigned
-	float speed = 1;
+	float multiplier = 1;
 	float delta = 0;
 
 	void updateDelta(I3DEngine& engine, bool register_input)
@@ -243,13 +243,13 @@ struct AxisControl
 
 		if (held_pos && !held_neg)
 		{
-			delta = speed;
+			delta = multiplier;
 			return;
 		}
 
 		if (held_neg && !held_pos)
 		{
-			delta = -speed;
+			delta = -multiplier;
 			return;
 		}
 
@@ -260,7 +260,7 @@ struct AxisControl
 // processes mouse X and Y movement, reports delta
 struct MouseControl
 {
-	float speed = 1;
+	float multiplier = 1;
 	float delta_x = 0, delta_y = 0;
 
 	void updateDelta(I3DEngine& engine, bool register_input)
@@ -274,8 +274,8 @@ struct MouseControl
 			return;
 		}
 
-		delta_x = static_cast<float>(engine.GetMouseMovementX()) * speed;
-		delta_y = static_cast<float>(engine.GetMouseMovementY()) * speed;
+		delta_x = static_cast<float>(engine.GetMouseMovementX()) * multiplier;
+		delta_y = static_cast<float>(engine.GetMouseMovementY()) * multiplier;
 	}
 };
 
@@ -562,7 +562,7 @@ void main() try
 		debug_camera.fly_toggle = {Key_U};
 		debug_camera.accelerate_button = {Mouse_RButton};
 		debug_camera.mouse_toggle = {Mouse_LButton};
-		debug_camera.mouse_move.speed = 0.05f;
+		debug_camera.mouse_move.multiplier = 0.05f;
 
 		StaticModel* const static_objects[] = {&water, &island, &skybox};
 		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
