@@ -452,6 +452,18 @@ private:
 	}
 
 public:
+	void setOrientation(float angle_horizontal = 0, float angle_vertical = 0)
+	{
+		angle_h = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
+		angle_v = max(min(angle_vertical, 90.f), -90.f);
+
+		m_camera.ResetOrientation();
+
+		m_camera.RotateX(angle_v);
+		m_camera.RotateY(angle_h);
+	}
+
+public:
 	virtual void processInput(bool register_input) override
 	{
 		KeyboardControlledCamera::processInput(register_input);
@@ -474,22 +486,8 @@ public:
 	{
 		StaticCamera::updateBegin(); // not KeyboardControlledCamera since we redefine the movement logic here
 
-		static float angle_h = 0;
-		static float angle_v = 0;
-
 		if (mouse_toggle.state.value)
-		{
-			angle_h += mouse_move.delta_x;
-			angle_v += mouse_move.delta_y;
-
-			angle_h = remainder(remainder(angle_h, 360.f) + 360.f, 360.f);
-			angle_v = max(min(angle_v, 90.f), -90.f);
-
-			m_camera.ResetOrientation();
-
-			m_camera.RotateX(angle_v);
-			m_camera.RotateY(angle_h);
-		}
+			setOrientation(angle_h + mouse_move.delta_x, angle_v + mouse_move.delta_y);
 
 		const float camera_speed_multiplier = (accelerate_button.state.value ? 3.f : 1.f);
 
@@ -502,6 +500,9 @@ public:
 	ToggleControl fly_toggle, mouse_toggle;
 	ButtonControl accelerate_button;
 	MouseControl mouse_move;
+
+protected:
+	float angle_h = 0, angle_v = 0;
 };
 
 enum class GameState
