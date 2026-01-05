@@ -1,6 +1,9 @@
+#include <cmath>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
+#include <stdexcept>
+#include <string>
 #include <thread>
 
 #include <TL-Engine.h>	// TL-Engine include file and namespace
