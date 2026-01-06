@@ -396,6 +396,11 @@ public:
 	using DynamicModel::DynamicModel;
 
 public:
+	bool isDead() const noexcept
+	{
+		return m_dead;
+	}
+
 	void setOrientation(float angle_horizontal = 0)
 	{
 		m_angle = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
@@ -422,6 +427,7 @@ public:
 
 protected:
 	float m_angle = 0;
+	bool m_dead = false;
 };
 
 class StaticCamera : public GameObject
