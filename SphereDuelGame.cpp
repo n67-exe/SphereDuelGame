@@ -512,13 +512,13 @@ private:
 public:
 	void setOrientation(float angle_horizontal = 0, float angle_vertical = 0)
 	{
-		angle_h = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
-		angle_v = max(min(angle_vertical, 90.f), -90.f);
+		m_angle_h = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
+		m_angle_v = max(min(angle_vertical, 90.f), -90.f);
 
 		m_camera.ResetOrientation();
 
-		m_camera.RotateX(angle_v);
-		m_camera.RotateY(angle_h);
+		m_camera.RotateX(m_angle_v);
+		m_camera.RotateY(m_angle_h);
 	}
 
 public:
@@ -545,13 +545,13 @@ public:
 		StaticCamera::updateBegin(); // not KeyboardControlledCamera since we redefine the movement logic here
 
 		if (mouse_toggle.state.value)
-			setOrientation(angle_h + mouse_move.delta_x, angle_v + mouse_move.delta_y);
+			setOrientation(m_angle_h + mouse_move.delta_x, m_angle_v + mouse_move.delta_y);
 
 		const float camera_speed_multiplier = (accelerate_button.state.value ? 3.f : 1.f);
 
-		moveEuler(camera_speed_multiplier * x_axis.delta, angle_h + 90, 0);
-		moveEuler(camera_speed_multiplier * z_axis.delta, angle_h, (fly_toggle.state.value ? angle_v : 0));
-		moveEuler(camera_speed_multiplier * y_axis.delta, angle_h, (fly_toggle.state.value ? angle_v : 0) - 90);
+		moveEuler(camera_speed_multiplier * x_axis.delta, m_angle_h + 90, 0);
+		moveEuler(camera_speed_multiplier * z_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0));
+		moveEuler(camera_speed_multiplier * y_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0) - 90);
 	}
 
 public:
@@ -560,7 +560,7 @@ public:
 	MouseControl mouse_move;
 
 protected:
-	float angle_h = 0, angle_v = 0;
+	float m_angle_h = 0, m_angle_v = 0;
 };
 
 enum class GameState
