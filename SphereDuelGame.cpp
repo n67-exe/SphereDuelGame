@@ -393,7 +393,11 @@ public:
 class SphereDynamicModel : public DynamicModel
 {
 public:
-	using DynamicModel::DynamicModel;
+	explicit SphereDynamicModel(I3DEngine& engine, IMesh& mesh, string normal_skin, string hyper_skin, Vec3 position = Vec3{}, float radius = 0)
+		: DynamicModel(engine, mesh, position, radius), m_normal_skin(move(normal_skin)), m_hyper_skin(move(hyper_skin))
+	{
+		setSkin(m_normal_skin);
+	}
 
 public:
 	bool isDead() const noexcept
@@ -428,6 +432,8 @@ public:
 protected:
 	float m_angle = 0;
 	bool m_dead = false;
+
+	string m_normal_skin, m_hyper_skin;
 };
 
 class StaticCamera : public GameObject
