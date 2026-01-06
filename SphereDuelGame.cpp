@@ -162,8 +162,12 @@ namespace numbers
 	template <typename T>
 	constexpr T deg_to_rad_v = 0.01745329251994329576923690768488613L; // = pi / 180
 
+	template <typename T>
+	constexpr T rad_to_deg_v = 57.29577951308232087679815481410517L; // = 180 / pi
+
 	constexpr float pi = pi_v<float>;
 	constexpr float deg_to_rad = deg_to_rad_v<float>;
+	constexpr float rad_to_deg = rad_to_deg_v<float>;
 }
 
 struct Vec3
