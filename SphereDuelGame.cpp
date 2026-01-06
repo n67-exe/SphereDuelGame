@@ -398,11 +398,11 @@ public:
 public:
 	void setOrientation(float angle_horizontal = 0)
 	{
-		angle = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
+		m_angle = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
 
 		m_model.ResetOrientation();
 
-		m_model.RotateY(angle);
+		m_model.RotateY(m_angle);
 	}
 
 public:
@@ -410,9 +410,9 @@ public:
 	{
 		DynamicModel::updateBegin();
 
-		setOrientation(angle + rotation_axis.delta);
+		setOrientation(m_angle + rotation_axis.delta);
 
-		const float angle_rad = angle * numbers::deg_to_rad;
+		const float angle_rad = m_angle * numbers::deg_to_rad;
 
 		velocity = Vec3{forward_axis.delta * sin(angle_rad), 0, forward_axis.delta * cos(angle_rad)};
 	}
@@ -421,7 +421,7 @@ public:
 	AxisControl forward_axis, rotation_axis;
 
 protected:
-	float angle;
+	float m_angle = 0;
 };
 
 class StaticCamera : public GameObject
