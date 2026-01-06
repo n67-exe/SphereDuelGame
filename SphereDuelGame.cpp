@@ -497,14 +497,15 @@ public:
 	using KeyboardControlledCamera::KeyboardControlledCamera;
 
 private:
-	void moveEuler(float delta, float angle_h, float angle_v)
+	// move towards a direction defined in spherical coordinates
+	void moveSpherical(float distance, float angle_h, float angle_v)
 	{
 		angle_h *= numbers::deg_to_rad;
 		angle_v *= numbers::deg_to_rad;
 
-		const float dx = delta * cos(angle_v) * sin(angle_h);
-		const float dz = delta * cos(angle_v) * cos(angle_h);
-		const float dy = delta * sin(angle_v) * -1;
+		const float dx = distance * cos(angle_v) * sin(angle_h);
+		const float dz = distance * cos(angle_v) * cos(angle_h);
+		const float dy = distance * sin(angle_v) * -1;
 
 		m_camera.Move(dx, dy, dz);
 	}
@@ -549,9 +550,9 @@ public:
 
 		const float camera_speed_multiplier = (accelerate_button.state.value ? 3.f : 1.f);
 
-		moveEuler(camera_speed_multiplier * x_axis.delta, m_angle_h + 90, 0);
-		moveEuler(camera_speed_multiplier * z_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0));
-		moveEuler(camera_speed_multiplier * y_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0) - 90);
+		moveSpherical(camera_speed_multiplier * x_axis.delta, m_angle_h + 90, 0);
+		moveSpherical(camera_speed_multiplier * z_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0));
+		moveSpherical(camera_speed_multiplier * y_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0) - 90);
 	}
 
 public:
