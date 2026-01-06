@@ -430,6 +430,13 @@ public:
 		velocity = Vec3{forward_axis.delta * sin(angle_rad), 0, forward_axis.delta * cos(angle_rad)};
 	}
 
+	virtual void updateEnd() override
+	{
+		DynamicModel::updateEnd();
+
+		setOrientation(atan2(velocity.x, velocity.z) * numbers::rad_to_deg);
+	}
+
 public:
 	AxisControl forward_axis, rotation_axis;
 
