@@ -160,10 +160,10 @@ namespace numbers
 	constexpr T pi_v = 3.141592653589793238462643383279503L; // = pi
 
 	template <typename T>
-	constexpr T deg_to_rad_v = 0.01745329251994329576923690768488613L; // = pi / 180
+	constexpr T deg_to_rad_v = 0.01745329251994329576923690768488613L; // = 2pi / 360
 
 	template <typename T>
-	constexpr T rad_to_deg_v = 57.29577951308232087679815481410517L; // = 180 / pi
+	constexpr T rad_to_deg_v = 57.29577951308232087679815481410517L; // = 360 / 2pi
 
 	constexpr float pi = pi_v<float>;
 	constexpr float deg_to_rad = deg_to_rad_v<float>;
@@ -445,6 +445,8 @@ protected:
 	bool m_dead = false;
 
 	string m_normal_skin, m_hyper_skin;
+
+	// TODO: friend collision
 };
 
 class StaticCamera : public GameObject
@@ -624,7 +626,7 @@ void main() try
 		StaticModel island{engine, island_mesh, {0, -5, 0}};
 		StaticModel skybox{engine, skybox_mesh, {0, -960, 0}};
 
-		KeyboardControlledCamera camera_1{engine, {0, 200, 0}};
+		KeyboardControlledCamera camera_1{engine, {0, 200, 0}}; // TODO: a bit higher
 
 		camera_1.getTransform().RotateLocalX(90);
 
