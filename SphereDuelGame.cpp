@@ -461,8 +461,42 @@ protected:
 	float m_angle = 0;
 
 	string m_normal_skin, m_hyper_skin;
+};
 
-	// TODO: friend collision
+class PlayerSphereDynamicModel final : public SphereDynamicModel
+{
+public:
+	using SphereDynamicModel::SphereDynamicModel;
+
+public:
+	virtual void processInput(bool register_input) override
+	{
+		SphereDynamicModel::processInput(register_input);
+
+		forward_axis.updateDelta(m_engine, register_input);
+		rotation_axis.updateDelta(m_engine, register_input);
+	}
+};
+
+class EnemySphereDynamicModel final : public SphereDynamicModel
+{
+public:
+	using SphereDynamicModel::SphereDynamicModel;
+
+public:
+	virtual void processInput(bool register_input) override
+	{
+		SphereDynamicModel::processInput(register_input);
+
+		// TODO: proper logic
+		static uniform_int_distribution<> dist{0, 1};
+
+		forward_axis.delta = forward_axis.multiplier * dist(random_generator);
+		rotation_axis.delta = rotation_axis.multiplier * dist(random_generator);
+	}
+
+public:
+	minstd_rand random_generator;
 };
 
 class StaticCamera : public GameObject
