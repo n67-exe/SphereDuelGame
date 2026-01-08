@@ -717,12 +717,16 @@ void main() try
 
 		int player_points = 0;
 
+		// 60 FPS
+		constexpr auto target_frame_time = chrono::duration_cast<chrono::steady_clock::duration>(std::chrono::duration<int, std::ratio<1, 60>>(1));
+
+		float delta_time = 0;
+
+		chrono::steady_clock::time_point frame_start_time = chrono::steady_clock::now();
+
 		// Main game loop
 		while (engine.IsRunning())
 		{
-			// Start of the current iteration
-			const auto start_frame = std::chrono::steady_clock::now();
-
 			if (engine.KeyHit(Key_Escape))
 				engine.Stop();
 
@@ -785,8 +789,16 @@ void main() try
 			// Render the scene
 			DEREF(active_camera).renderScene();
 
-			// End of the current iteration, calculate sleep time
-			this_thread::sleep_until(start_frame + chrono::duration<int, std::ratio<1, 60>>(1)); // 60 FPS
+			// Calculate next frame start time
+			const chrono::steady_clock::time_point next_frame_start_time = max(chrono::steady_clock::now(), frame_start_time + target_frame_time);
+
+			// Calculate delta time
+			delta_time = chrono::duration<float>(next_frame_start_time - frame_start_time).count();
+
+			// Sleep
+			this_thread::sleep_until(next_frame_start_time);
+
+			frame_start_time = next_frame_start_time;
 		}
 	}
 	catch (...)
