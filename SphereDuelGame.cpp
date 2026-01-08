@@ -421,11 +421,6 @@ public:
 	}
 
 public:
-	bool isDead() const noexcept
-	{
-		return m_dead;
-	}
-
 	void setOrientation(float angle_horizontal = 0)
 	{
 		m_angle = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
@@ -460,10 +455,10 @@ public:
 
 public:
 	AxisControl forward_axis, rotation_axis;
+	bool dead = false;
 
 protected:
 	float m_angle = 0;
-	bool m_dead = false;
 
 	string m_normal_skin, m_hyper_skin;
 
