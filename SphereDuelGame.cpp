@@ -825,6 +825,8 @@ void main() try
 		IMesh& water_mesh = DEREF(engine.LoadMesh("water.x"));
 		IMesh& island_mesh = DEREF(engine.LoadMesh("island.x"));
 		IMesh& skybox_mesh = DEREF(engine.LoadMesh("sky.x"));
+		IMesh& sphere_mesh = DEREF(engine.LoadMesh("spheremesh.x"));
+		IMesh& cube_mesh = DEREF(engine.LoadMesh("minicube.x"));
 
 		IFont& main_font = DEREF(engine.LoadFont("Comic Sans MS", 36));
 
@@ -832,6 +834,26 @@ void main() try
 		StaticModel water{engine, water_mesh, {0, -5, 0}};
 		StaticModel island{engine, island_mesh, {0, -5, 0}};
 		StaticModel skybox{engine, skybox_mesh, {0, -960, 0}};
+
+		auto* player = new PlayerSphereDynamicModel{engine, sphere_mesh, "regularsphere.jpg", "hypersphere.jpg", {0, 10, 0}, 10};
+		{
+			DEREF(player).forward_axis = {Key_W, Key_S, 1};
+			DEREF(player).rotation_axis = {Key_D, Key_A, 1};
+		}
+
+		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "enemysphere.jpg", "hypersphere.jpg", {0, 10, 0}, 10};
+		{
+			DEREF(enemy).random_generator.seed(1);
+		}
+
+		DynamicModelManager cube_manager{engine, cube_mesh, "minicube.jpg", "hypercube.jpg", 12, 2.5};
+		{
+			cube_manager.bounds_from = {-100, 2.5, -100};
+			cube_manager.bounds_to = {100, 2.5, 100};
+			cube_manager.separation = 10;
+
+			cube_manager.respawnAll(player, enemy);
+		}
 
 		KeyboardControlledCamera camera_1{engine, {0, 200, 0}}; // TODO: a bit higher
 		{
@@ -911,6 +933,12 @@ void main() try
 			for (StaticModel* const static_object : static_objects)
 				DEREF(static_object).processInput(register_input);
 
+			if (player)
+				DEREF(player).processInput(register_input);
+
+			if (enemy)
+				DEREF(enemy).processInput(register_input);
+
 			for (StaticCamera* const camera : cameras)
 				DEREF(camera).processInput(register_input && camera == active_camera);
 
@@ -919,14 +947,61 @@ void main() try
 				for (StaticModel* const static_object : static_objects)
 					DEREF(static_object).updateBegin();
 
+				if (player)
+					DEREF(player).updateBegin();
+
+				if (enemy)
+					DEREF(enemy).updateBegin();
+
 				for (StaticCamera* const camera : cameras)
 					DEREF(camera).updateBegin();
+				
+				// TODO: collisions
+				cube_manager.collide(player, enemy);
 
 				for (StaticModel* const static_object : static_objects)
 					DEREF(static_object).updateEnd();
 
+				if (player)
+					DEREF(player).updateEnd();
+
+				if (enemy)
+					DEREF(enemy).updateEnd();
+
 				for (StaticCamera* const camera : cameras)
 					DEREF(camera).updateEnd();
+
+				if (player)
+				{
+					player_points = DEREF(player).points;
+
+					if (DEREF(player).dead)
+					{
+						delete player;
+
+						player = nullptr;
+					}
+				}
+
+				if (enemy)
+				{
+					enemy_points = DEREF(enemy).points;
+
+					if (DEREF(enemy).dead)
+					{
+						delete enemy;
+
+						enemy = nullptr;
+					}
+				}
+			}
+
+			if (state == GameState::Playing)
+			{
+				if (!enemy)
+					state = GameState::GameWon;
+				else if (!player)
+					state = GameState::GameOver;
 			}
 
 			// Display FPS
