@@ -892,7 +892,7 @@ void main() try
 
 		GameState state = GameState::Playing;
 
-		int player_points = 0;
+		int player_points = 0, enemy_points = 0;
 
 		// 60 FPS
 		constexpr auto target_frame_time = chrono::duration_cast<chrono::steady_clock::duration>(std::chrono::duration<int, std::ratio<1, 60>>(1));
@@ -1006,6 +1006,16 @@ void main() try
 
 			// Display FPS
 			main_font.Draw(fixed_float_to_string(1 / delta_time, 3, 2) + " FPS", 0, 0, kBlack, kLeft, kTop);
+
+			ostringstream player_stats, enemy_stats;
+
+			player_stats << "\nPlayer: " << setw(3) << player_points;
+			enemy_stats << "\nEnemy: " << setw(3) << enemy_points;
+
+			const string stats = (enemy_points > player_points ? enemy_stats.str() + player_stats.str() : player_stats.str() + enemy_stats.str());
+
+			// Display points
+			main_font.Draw("Points:" + stats, engine.GetWidth() - 5, 0, kBlack, kRight, kTop);
 
 			switch (state)
 			{
