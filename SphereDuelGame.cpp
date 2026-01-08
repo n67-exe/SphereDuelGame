@@ -747,7 +747,7 @@ public:
 			setPosition(DEREF(cube).getTransform(), getNextSpawn(player_ptr, enemy_ptr, DEREF(cube).radius));
 	}
 
-	void collide(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
+	void processCollisions(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
 	{
 		// collision
 		if (player_ptr)
@@ -957,7 +957,7 @@ void main() try
 					DEREF(camera).updateBegin();
 				
 				// TODO: collisions
-				cube_manager.collide(player, enemy);
+				cube_manager.processCollisions(player, enemy);
 
 				for (StaticModel* const static_object : static_objects)
 					DEREF(static_object).updateEnd();
