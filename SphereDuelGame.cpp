@@ -182,6 +182,16 @@ struct Vec3
 	}
 };
 
+Vec3 getPosition(const ISceneNode& node)
+{
+	return Vec3{node.GetX(), node.GetY(), node.GetZ()};
+}
+
+void setPosition(ISceneNode& node, Vec3 position)
+{
+	node.SetPosition(position.x, position.y, position.z);
+}
+
 struct BinaryState
 {
 	bool value = false, just_changed = false;
