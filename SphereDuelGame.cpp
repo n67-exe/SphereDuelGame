@@ -627,27 +627,30 @@ void main() try
 		StaticModel skybox{engine, skybox_mesh, {0, -960, 0}};
 
 		KeyboardControlledCamera camera_1{engine, {0, 200, 0}}; // TODO: a bit higher
+		{
+			camera_1.getTransform().RotateLocalX(90);
 
-		camera_1.getTransform().RotateLocalX(90);
-
-		camera_1.x_axis = {Key_Right, Key_Left, 1.5};
-		camera_1.z_axis = {Key_Up, Key_Down, 1.5};
+			camera_1.x_axis = {Key_Right, Key_Left, 1.5};
+			camera_1.z_axis = {Key_Up, Key_Down, 1.5};
+		}
 
 		StaticCamera camera_2{engine, {150, 150, -150}};
-
-		camera_2.getTransform().RotateLocalY(-45);
-		camera_2.getTransform().RotateLocalX(45);
+		{
+			camera_2.getTransform().RotateLocalY(-45);
+			camera_2.getTransform().RotateLocalX(45);
+		}
 
 		DebugCamera debug_camera{engine, {0, 10, 0}};
+		{
+			debug_camera.x_axis = {Key_L, Key_J, 1};
+			debug_camera.z_axis = {Key_I, Key_K, 1};
+			debug_camera.y_axis = {Key_Y, Key_H, 1};
 
-		debug_camera.x_axis = {Key_L, Key_J, 1};
-		debug_camera.z_axis = {Key_I, Key_K, 1};
-		debug_camera.y_axis = {Key_Y, Key_H, 1};
-
-		debug_camera.fly_toggle = {Key_U};
-		debug_camera.accelerate_button = {Mouse_RButton};
-		debug_camera.mouse_toggle = {Mouse_LButton};
-		debug_camera.mouse_move.multiplier = 0.05f;
+			debug_camera.fly_toggle = {Key_U};
+			debug_camera.accelerate_button = {Mouse_RButton};
+			debug_camera.mouse_toggle = {Mouse_LButton};
+			debug_camera.mouse_move.multiplier = 0.05f;
+		}
 
 		StaticModel* const static_objects[] = {&water, &island, &skybox};
 		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
