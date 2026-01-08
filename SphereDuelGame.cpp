@@ -647,13 +647,13 @@ class DynamicModelManager
 {
 public:
 	explicit DynamicModelManager(I3DEngine& engine, IMesh& mesh, const string& normal_skin, const string& hyper_skin, int count, float cube_radius)
-		: hypercube(engine, mesh, {}, cube_radius), cubes(count - 1, nullptr)
+		: m_hypercube(engine, mesh, {}, cube_radius), m_cubes(count - 1, nullptr)
 	{
 		ASSERT(count > 0);
 
-		hypercube.setSkin(hyper_skin);
+		m_hypercube.setSkin(hyper_skin);
 
-		for (DynamicModel*& cube : cubes)
+		for (DynamicModel*& cube : m_cubes)
 		{
 			cube = new DynamicModel{engine, mesh, {}, cube_radius};
 
@@ -663,7 +663,7 @@ public:
 
 	~DynamicModelManager()
 	{
-		for (DynamicModel* cube : cubes)
+		for (DynamicModel* cube : m_cubes)
 			delete cube;
 	}
 
@@ -709,10 +709,10 @@ public:
 			position.y = y_distribution(random_generator);
 			position.z = z_distribution(random_generator);
 
-			if (distance(position, getPosition(hypercube.getTransform())) < separation)
+			if (distance(position, getPosition(m_hypercube.getTransform())) < separation)
 				goto RETRY;
 
-			for (const DynamicModel* cube : cubes)
+			for (const DynamicModel* cube : m_cubes)
 				if (distance(position, getPosition(DEREF(cube).getTransform())) < separation)
 					goto RETRY;
 
@@ -736,14 +736,14 @@ public:
 		outside.y += separation;
 		outside.z += separation;
 
-		setPosition(hypercube.getTransform(), outside);
+		setPosition(m_hypercube.getTransform(), outside);
 
-		for (DynamicModel* cube : cubes)
+		for (DynamicModel* cube : m_cubes)
 			setPosition(DEREF(cube).getTransform(), outside);
 
-		setPosition(hypercube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, hypercube.radius));
+		setPosition(m_hypercube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, m_hypercube.radius));
 
-		for (DynamicModel* cube : cubes)
+		for (DynamicModel* cube : m_cubes)
 			setPosition(DEREF(cube).getTransform(), getNextSpawn(player_ptr, enemy_ptr, DEREF(cube).radius));
 	}
 
@@ -772,8 +772,8 @@ public:
 	}
 
 protected:
-	DynamicModel hypercube;
-	vector<DynamicModel*> cubes;
+	DynamicModel m_hypercube;
+	vector<DynamicModel*> m_cubes;
 
 public:
 	float separation = 0;
