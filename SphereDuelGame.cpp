@@ -173,6 +173,13 @@ namespace numbers
 struct Vec3
 {
 	float x = 0, y = 0, z = 0;
+
+	friend float distance(Vec3 a, Vec3 b)
+	{
+		Vec3 d = {a.x - b.x, a.y - b.y, a.z - b.z};
+
+		return sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
+	}
 };
 
 struct BinaryState
