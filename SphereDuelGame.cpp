@@ -1,6 +1,7 @@
 #include <cmath>
 #include <iomanip>
 #include <iostream>
+#include <random>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -639,6 +640,144 @@ public:
 
 protected:
 	float m_angle_h = 0, m_angle_v = 0;
+};
+
+class DynamicModelManager
+{
+public:
+	explicit DynamicModelManager(I3DEngine& engine, IMesh& mesh, const string& normal_skin, const string& hyper_skin, int count, float cube_radius)
+		: hypercube(engine, mesh, {}, cube_radius), cubes(count - 1, nullptr)
+	{
+		ASSERT(count > 0);
+
+		hypercube.setSkin(hyper_skin);
+
+		for (DynamicModel*& cube : cubes)
+		{
+			cube = new DynamicModel{engine, mesh, {}, cube_radius};
+
+			DEREF(cube).setSkin(normal_skin);
+		}
+	}
+
+	~DynamicModelManager()
+	{
+		for (DynamicModel* cube : cubes)
+			delete cube;
+	}
+
+	DynamicModelManager(const DynamicModelManager&) = delete;
+	DynamicModelManager(DynamicModelManager&&) = delete;
+
+	DynamicModelManager& operator=(const DynamicModelManager&) = delete;
+	DynamicModelManager& operator=(DynamicModelManager&&) = delete;
+
+public:
+	bool withinBounds(Vec3 point) const noexcept
+	{
+		if (bounds_from.x != bounds_to.x)
+			if (bounds_from.x > point.x || point.x > bounds_to.x)
+				return false;
+
+		if (bounds_from.y != bounds_to.y)
+			if (bounds_from.y > point.y || point.y > bounds_to.y)
+				return false;
+
+		if (bounds_from.z != bounds_to.z)
+			if (bounds_from.z > point.z || point.z > bounds_to.z)
+				return false;
+
+		return true;
+	}
+
+	Vec3 getNextSpawn(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr, float margin)
+	{
+		const float x_margin = (bounds_from.x != bounds_to.x) ? margin : 0;
+		const float y_margin = (bounds_from.y != bounds_to.y) ? margin : 0;
+		const float z_margin = (bounds_from.z != bounds_to.z) ? margin : 0;
+
+		uniform_real_distribution<float> x_distribution{bounds_from.x + x_margin, bounds_to.x - x_margin};
+		uniform_real_distribution<float> y_distribution{bounds_from.y + y_margin, bounds_to.y - y_margin};
+		uniform_real_distribution<float> z_distribution{bounds_from.z + z_margin, bounds_to.z - z_margin};
+
+		Vec3 position;
+
+		RETRY:
+		{
+			position.x = x_distribution(random_generator);
+			position.y = y_distribution(random_generator);
+			position.z = z_distribution(random_generator);
+
+			if (distance(position, getPosition(hypercube.getTransform())) < separation)
+				goto RETRY;
+
+			for (const DynamicModel* cube : cubes)
+				if (distance(position, getPosition(DEREF(cube).getTransform())) < separation)
+					goto RETRY;
+
+			if (player_ptr)
+				if (distance(position, getPosition(DEREF(player_ptr).getTransform())) < separation)
+					goto RETRY;
+
+			if (enemy_ptr)
+				if (distance(position, getPosition(DEREF(enemy_ptr).getTransform())) < separation)
+					goto RETRY;
+		}
+
+		return position;
+	}
+
+	void respawnAll(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr)
+	{
+		Vec3 outside = bounds_to;
+
+		outside.x += separation;
+		outside.y += separation;
+		outside.z += separation;
+
+		setPosition(hypercube.getTransform(), outside);
+
+		for (DynamicModel* cube : cubes)
+			setPosition(DEREF(cube).getTransform(), outside);
+
+		setPosition(hypercube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, hypercube.radius));
+
+		for (DynamicModel* cube : cubes)
+			setPosition(DEREF(cube).getTransform(), getNextSpawn(player_ptr, enemy_ptr, DEREF(cube).radius));
+	}
+
+	void collide(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
+	{
+		// collision
+		if (player_ptr)
+		{
+			SphereDynamicModel& player = DEREF(player_ptr);
+
+			player.getTransform().Move(player.velocity.x, player.velocity.y, player.velocity.z);
+
+			if (!withinBounds(getPosition(player.getTransform())))
+				player.dead = true;
+		}
+
+		if (enemy_ptr)
+		{
+			SphereDynamicModel& enemy = DEREF(enemy_ptr);
+
+			enemy.getTransform().Move(enemy.velocity.x, enemy.velocity.y, enemy.velocity.z);
+
+			if (!withinBounds(getPosition(enemy.getTransform())))
+				enemy.dead = true;
+		}
+	}
+
+protected:
+	DynamicModel hypercube;
+	vector<DynamicModel*> cubes;
+
+public:
+	float separation = 0;
+	Vec3 bounds_from, bounds_to;
+	minstd_rand random_generator;
 };
 
 template <typename F>
