@@ -641,6 +641,21 @@ protected:
 	float m_angle_h = 0, m_angle_v = 0;
 };
 
+template <typename F>
+string fixed_float_to_string(F value, streamsize before, streamsize after, char fill = ' ')
+{
+	ASSERT(before >= 0);
+	ASSERT(after >= 0);
+
+	ostringstream str;
+
+	streamsize width = before + (after == 0 ? 0 : after + 1);
+
+	str << fixed << right << setfill(fill) << setprecision(after) << setw(width) << value;
+
+	return str.str();
+}
+
 enum class GameState
 {
 	Playing,
@@ -774,7 +789,8 @@ void main() try
 					DEREF(camera).updateEnd();
 			}
 
-			main_font.Draw("Points: " + to_string(player_points), engine.GetWidth(), 0, kBlack, kRight, kTop);
+			// Display FPS
+			main_font.Draw(fixed_float_to_string(1 / delta_time, 3, 2) + " FPS", 0, 0, kBlack, kLeft, kTop);
 
 			switch (state)
 			{
