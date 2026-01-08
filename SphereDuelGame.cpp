@@ -456,6 +456,7 @@ public:
 
 public:
 	AxisControl forward_axis, rotation_axis;
+	int points = 0;
 	bool dead = false;
 
 protected:
