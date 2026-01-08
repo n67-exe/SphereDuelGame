@@ -451,7 +451,11 @@ public:
 	{
 		DynamicModel::updateEnd();
 
-		setOrientation(atan2(velocity.x, velocity.z) * numbers::rad_to_deg);
+		if (forward_axis.delta > 0)
+			setOrientation(atan2(velocity.x, velocity.z) * numbers::rad_to_deg);
+
+		if (forward_axis.delta < 0)
+			setOrientation(atan2(-velocity.x, -velocity.z) * numbers::rad_to_deg);
 	}
 
 public:
