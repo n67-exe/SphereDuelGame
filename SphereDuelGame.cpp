@@ -623,7 +623,7 @@ public:
 		if (mouse_toggle.state.value)
 			setOrientation(m_angle_h + mouse_move.delta_x, m_angle_v + mouse_move.delta_y);
 
-		const float camera_speed_multiplier = (accelerate_button.state.value ? 3.f : 1.f);
+		const float camera_speed_multiplier = (accelerate_button.state.value ? acceleration_multiplier : 1.f);
 
 		moveSpherical(camera_speed_multiplier * x_axis.delta, m_angle_h + 90, 0);
 		moveSpherical(camera_speed_multiplier * z_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0));
@@ -634,6 +634,8 @@ public:
 	ToggleControl fly_toggle, mouse_toggle;
 	ButtonControl accelerate_button;
 	MouseControl mouse_move;
+
+	float acceleration_multiplier = 2;
 
 protected:
 	float m_angle_h = 0, m_angle_v = 0;
@@ -697,9 +699,12 @@ void main() try
 			debug_camera.y_axis = {Key_Y, Key_H, 1};
 
 			debug_camera.fly_toggle = {Key_U};
+
 			debug_camera.accelerate_button = {Mouse_RButton};
+			debug_camera.acceleration_multiplier = 5;
+
 			debug_camera.mouse_toggle = {Mouse_LButton};
-			debug_camera.mouse_move.multiplier = 0.05f;
+			debug_camera.mouse_move.multiplier = 0.05;
 		}
 
 		StaticModel* const static_objects[] = {&water, &island, &skybox};
