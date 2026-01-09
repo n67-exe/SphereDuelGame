@@ -848,6 +848,7 @@ public:
 			cube_times[i] = time;
 		};
 
+		// make all the positions up to date
 		auto advance_time = [&](float time)
 		{
 			for (int i = 0; i < count; i++)
@@ -878,11 +879,13 @@ public:
 			}
 		};
 
+		// capture and push all objects away when sphere grows
 		auto expand_sphere = [&](SphereDynamicModel& sphere, SphereDynamicModel* other_sphere) -> pair<int, bool>
 		{
 			int points = 0;
 			bool hyper = false;
 
+			// eat all the cubes close enough
 			for (int i = 0; i < count; i++)
 			{
 				DynamicModel& cube = getCube(i);
@@ -898,6 +901,7 @@ public:
 				}
 			}
 
+			// push the sphere away (intentionally do not eat)
 			if (other_sphere)
 			{
 				SphereDynamicModel& other = DEREF(other_sphere);
@@ -927,6 +931,7 @@ public:
 			return {points, hyper};
 		};
 
+		// calculate collision times for a specific cube
 		auto calculate_collision_time = [&](int i)
 		{
 			if (player_ptr)
@@ -936,6 +941,7 @@ public:
 				enemy_collision_times[i] = timeOfCollision(DEREF(enemy_ptr), enemy_time, getCube(i), cube_times[i]);
 		};
 
+		// calculate collision times for all cubes
 		auto calculate_all_collision_times = [&]()
 		{
 			if (player_ptr)
@@ -1017,6 +1023,7 @@ public:
 
 			advance_time(closest_collision_time);
 
+			// handle collisions
 			switch (closest_collision_type)
 			{
 			break; case CollisionType::PlayerCube:
@@ -1152,6 +1159,7 @@ public:
 		advance_time(1);
 	}
 
+	// remove spheres out of bounds
 	void checkBounds(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
 	{
 		if (player_ptr)
@@ -1218,6 +1226,8 @@ public:
 
 		DynamicModelManager& manager = DEREF(model_manager);
 
+		// """AI"""
+		// pick closest cube and go for it
 		float min_distance = numbers::largest;
 		int index = 0;
 
@@ -1412,6 +1422,7 @@ protected:
 	float m_angle_h = 0, m_angle_v = 0;
 };
 
+// convert float to a string
 template <typename F>
 string fixed_float_to_string(F value, streamsize before, streamsize after, char fill = ' ')
 {
@@ -1479,8 +1490,8 @@ void main() try
 			DEREF(player).max_scale_level = 5;
 		}
 
+		// pick a random position 80 units away
 		const float angle = uniform_real_distribution<float>{0, numbers::pi * 2}(rd);
-
 		const Vec3 enemy_position = Vec3{sin(angle), 0, cos(angle)} * 80 + Vec3{0, 10, 0};
 
 		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "enemysphere.jpg", "hypersphere.jpg", enemy_position, 10};
@@ -1590,32 +1601,40 @@ void main() try
 
 			const bool register_input = (engine.IsActive() && state == GameState::Playing);
 
-			for (StaticModel* const static_object : static_objects)
-				DEREF(static_object).processInput(register_input);
-
-			if (player)
-				DEREF(player).processInput(register_input);
-
-			if (enemy)
-				DEREF(enemy).processInput(register_input);
-
-			for (StaticCamera* const camera : cameras)
-				DEREF(camera).processInput(register_input && camera == active_camera);
-
-			if (state != GameState::Paused)
+			// process input
 			{
 				for (StaticModel* const static_object : static_objects)
-					DEREF(static_object).update(delta_time);
+					DEREF(static_object).processInput(register_input);
 
 				if (player)
-					DEREF(player).update(delta_time);
+					DEREF(player).processInput(register_input);
 
 				if (enemy)
-					DEREF(enemy).update(delta_time);
+					DEREF(enemy).processInput(register_input);
 
 				for (StaticCamera* const camera : cameras)
-					DEREF(camera).update(delta_time);
+					DEREF(camera).processInput(register_input && camera == active_camera);
+			}
+
+			// game logic if not paused
+			if (state != GameState::Paused)
+			{
+				// update the objects
+				{
+					for (StaticModel* const static_object : static_objects)
+						DEREF(static_object).update(delta_time);
+
+					if (player)
+						DEREF(player).update(delta_time);
+
+					if (enemy)
+						DEREF(enemy).update(delta_time);
+
+					for (StaticCamera* const camera : cameras)
+						DEREF(camera).update(delta_time);
+				}
 				
+				// process collisions
 				cube_manager.applyVelocities(player, enemy);
 				cube_manager.processCollisions(player, enemy);
 				cube_manager.checkBounds(player, enemy);
@@ -1624,6 +1643,7 @@ void main() try
 				{
 					player_points = DEREF(player).getPoints();
 
+					// delete player if dead
 					if (DEREF(player).dead)
 					{
 						delete player;
@@ -1636,6 +1656,7 @@ void main() try
 				{
 					enemy_points = DEREF(enemy).getPoints();
 
+					// delete enemy if dead
 					if (DEREF(enemy).dead)
 					{
 						delete enemy;
@@ -1645,6 +1666,7 @@ void main() try
 				}
 			}
 
+			// update game state
 			if (state == GameState::Playing)
 			{
 				if (!player)
@@ -1669,9 +1691,10 @@ void main() try
 
 			const string stats = (enemy_points > player_points ? enemy_stats.str() + player_stats.str() : player_stats.str() + enemy_stats.str());
 
-			// Display points
+			// Display players' points
 			main_font.Draw("Points:" + stats, engine.GetWidth() - 5, 0, kBlack, kRight, kTop);
 
+			// Display on screen message
 			switch (state)
 			{
 			break; case GameState::Paused:
