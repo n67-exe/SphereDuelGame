@@ -1144,7 +1144,6 @@ public:
 				calculate_collision_time(index);
 
 				player.increasePoints(10, &cube == &m_hypercube);
-				// TODO: hypercube
 			}
 			break; case CollisionType::EnemyCube:
 			{
@@ -1155,7 +1154,6 @@ public:
 				calculate_collision_time(index);
 
 				enemy.increasePoints(10, &cube == &m_hypercube);
-				// TODO: hypercube
 			}
 			break; case CollisionType::PlayerEnemy:
 			{
@@ -1311,7 +1309,7 @@ void main() try
 			cube_manager.respawnAll(player, enemy);
 		}
 
-		KeyboardControlledCamera camera_1{engine, {0, 200, 0}}; // TODO: a bit higher
+		KeyboardControlledCamera camera_1{engine, {0, 210, 0}};
 		{
 			camera_1.getTransform().RotateLocalX(90);
 
