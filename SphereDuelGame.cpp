@@ -179,11 +179,15 @@ struct Vec3
 {
 	float x = 0, y = 0, z = 0;
 
-	friend float distance(Vec3 a, Vec3 b)
+public:
+	float length() const
 	{
-		Vec3 d = {a.x - b.x, a.y - b.y, a.z - b.z};
+		return hypot(hypot(x, y), z);
+	}
 
-		return sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
+	float squaredLength() const noexcept
+	{
+		return x * x + y * y + z * z;
 	}
 
 public:
@@ -792,20 +796,29 @@ private:
 			position.y = y_distribution(random_generator);
 			position.z = z_distribution(random_generator);
 
-			if (distance(position, getPosition(m_hypercube.getTransform())) < separation)
-				goto RETRY;
+			for (int i = 0; i < cubeCount(); i++)
+			{
+				DynamicModel& cube = getCube(i);
 
-			for (const DynamicModel* cube : m_cubes)
-				if (distance(position, getPosition(DEREF(cube).getTransform())) < separation)
+				if ((position - getPosition(getCube(i).getTransform())).length() < separation + cube.radius)
 					goto RETRY;
+			}
 
 			if (player_ptr)
-				if (distance(position, getPosition(DEREF(player_ptr).getTransform())) < separation)
+			{
+				const SphereDynamicModel& player = DEREF(player_ptr);
+
+				if ((position - getPosition(player.getTransform())).length() < separation + player.radius)
 					goto RETRY;
+			}
 
 			if (enemy_ptr)
-				if (distance(position, getPosition(DEREF(enemy_ptr).getTransform())) < separation)
+			{
+				const SphereDynamicModel& enemy = DEREF(enemy_ptr);
+
+				if ((position - getPosition(enemy.getTransform())).length() < separation + enemy.radius)
 					goto RETRY;
+			}
 		}
 
 		return position;
