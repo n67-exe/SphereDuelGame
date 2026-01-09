@@ -917,13 +917,16 @@ public:
 		auto damp = [&](Vec3 v) -> Vec3
 		{
 			return v * damping_multiplier;
+		};
 
+		auto pull_force = [&](Vec3 v) -> Vec3
+		{
 			const float l = v.length();
 
-			if (!l)
+			if (l == 0 || l >= pull_range)
 				return {};
 
-			return v / l * max(0.f, l - damping_limit);
+			return v * ((pull_range / l - 1) * pull_multiplier / l);
 		};
 
 		for (int i = 0; i < cubeCount(); i++)
@@ -932,7 +935,37 @@ public:
 
 			cube.velocity = damp(cube.velocity);
 
-			// TODO: hypercube
+			// do not apply pull force to hypercube
+			if (&cube == &m_hypercube)
+				continue;
+
+			if (player_ptr)
+			{
+				SphereDynamicModel& player = DEREF(player_ptr);
+
+				if (player.isHyper())
+				{
+					Vec3 pull = pull_force(getPosition(player.getTransform()) - getPosition(cube.getTransform()));
+
+					pull.y = 0;
+
+					cube.velocity = cube.velocity + pull;
+				}
+			}
+
+			if (enemy_ptr)
+			{
+				SphereDynamicModel& enemy = DEREF(enemy_ptr);
+
+				if (enemy.isHyper())
+				{
+					Vec3 pull = pull_force(getPosition(enemy.getTransform()) - getPosition(cube.getTransform()));
+
+					pull.y = 0;
+
+					cube.velocity = cube.velocity + pull;
+				}
+			}
 		}
 
 		if (player_ptr)
@@ -1191,7 +1224,8 @@ public:
 	minstd_rand random_generator;
 
 	float bounce_force = 0;
-	float damping_multiplier = 0, damping_limit = 0;
+	float damping_multiplier = 0;
+	float pull_range = 0, pull_multiplier = 1;
 };
 
 template <typename F>
@@ -1268,8 +1302,11 @@ void main() try
 			cube_manager.bounds_from = {-100, 2.5, -100};
 			cube_manager.bounds_to = {100, 2.5, 100};
 			cube_manager.separation = 10;
+
 			cube_manager.damping_multiplier = 0.75;
 			cube_manager.bounce_force = 4;
+			cube_manager.pull_range = 50;
+			cube_manager.pull_multiplier = 0.4;
 
 			cube_manager.respawnAll(player, enemy);
 		}
