@@ -12,6 +12,8 @@
 using namespace tle;
 using namespace std;
 
+#define RANGE(r) begin(r), end(r)
+
 // full function signature (readable)
 #ifdef _MSC_VER
 #define FUNCTION_SIGNATURE __FUNCSIG__
