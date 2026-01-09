@@ -420,7 +420,7 @@ public:
 
 public:
 	virtual void processInput(bool register_input) {};
-	virtual void updateBegin() {};
+	virtual void update(float delta_time) {};
 
 public:
 	virtual ISceneNode& getTransform() = 0;
@@ -543,9 +543,9 @@ public:
 	}
 
 public:
-	virtual void updateBegin() override
+	virtual void update(float delta_time) override
 	{
-		DynamicModel::updateBegin();
+		DynamicModel::update(delta_time);
 
 		setOrientation(m_angle + rotation_axis.delta);
 
@@ -655,9 +655,9 @@ public:
 		z_axis.updateDelta(m_engine, register_input);
 	}
 
-	virtual void updateBegin() override
+	virtual void update(float delta_time) override
 	{
-		StaticCamera::updateBegin();
+		StaticCamera::update(delta_time);
 
 		m_camera.Move(x_axis.delta, y_axis.delta, z_axis.delta);
 	}
@@ -718,9 +718,9 @@ public:
 			mouse_toggle.state.value ? m_engine.StartMouseCapture() : m_engine.StopMouseCapture();
 	}
 
-	virtual void updateBegin() override
+	virtual void update(float delta_time) override
 	{
-		StaticCamera::updateBegin(); // not KeyboardControlledCamera since we redefine the movement logic here
+		StaticCamera::update(delta_time); // not KeyboardControlledCamera since we redefine the movement logic here
 
 		if (mouse_toggle.state.value)
 			setOrientation(m_angle_h + mouse_move.delta_x, m_angle_v + mouse_move.delta_y);
@@ -1325,16 +1325,16 @@ void main() try
 			if (state != GameState::Paused)
 			{
 				for (StaticModel* const static_object : static_objects)
-					DEREF(static_object).updateBegin();
+					DEREF(static_object).update(delta_time);
 
 				if (player)
-					DEREF(player).updateBegin();
+					DEREF(player).update(delta_time);
 
 				if (enemy)
-					DEREF(enemy).updateBegin();
+					DEREF(enemy).update(delta_time);
 
 				for (StaticCamera* const camera : cameras)
-					DEREF(camera).updateBegin();
+					DEREF(camera).update(delta_time);
 				
 				// TODO: collisions
 				cube_manager.applyVelocities(player, enemy);
