@@ -737,7 +737,26 @@ public:
 	DynamicModelManager& operator=(const DynamicModelManager&) = delete;
 	DynamicModelManager& operator=(DynamicModelManager&&) = delete;
 
-public:
+private:
+	int cubeCount() const
+	{
+		return m_cubes.size() + 1;
+	}
+
+	DynamicModel& getCube(int index)
+	{
+		ASSERT(index <= m_cubes.size());
+
+		return (index == m_cubes.size() ? m_hypercube : DEREF(m_cubes[index]));
+	}
+
+	const DynamicModel& getCube(int index) const
+	{
+		ASSERT(index <= m_cubes.size());
+
+		return (index == m_cubes.size() ? m_hypercube : DEREF(m_cubes[index]));
+	}
+
 	bool withinBounds(Vec3 point) const noexcept
 	{
 		if (bounds_from.x != bounds_to.x)
@@ -792,6 +811,7 @@ public:
 		return position;
 	}
 
+public:
 	void respawnAll(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr)
 	{
 		Vec3 outside = bounds_to;
