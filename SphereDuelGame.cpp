@@ -1,4 +1,5 @@
 #include <cmath>
+#include <fstream>
 #include <iomanip>
 #include <iostream>
 #include <random>
@@ -7,6 +8,10 @@
 #include <string>
 #include <thread>
 #include <vector>
+
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
 
 #include <TL-Engine.h>
 
@@ -1750,4 +1755,19 @@ catch (const CTLException& ex)
 catch (...)
 {
 	internal::report_exception("Unknown", nullptr);
+}
+
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
+{
+	ofstream out("cout.log");
+	ofstream err("cerr.log");
+	ofstream log("clog.log");
+
+	cout.rdbuf(out.rdbuf());
+	cerr.rdbuf(err.rdbuf());
+	clog.rdbuf(log.rdbuf());
+
+	main();
+
+	return 0;
 }
