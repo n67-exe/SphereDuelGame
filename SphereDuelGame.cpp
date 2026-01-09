@@ -185,6 +185,66 @@ struct Vec3
 
 		return sqrt(d.x * d.x + d.y * d.y + d.z * d.z);
 	}
+
+public:
+	friend bool operator==(Vec3 l, Vec3 r)
+	{
+		return l.x == r.x && l.y == r.y && l.z == r.z;
+	}
+
+	friend bool operator!=(Vec3 l, Vec3 r)
+	{
+		return !(l == r);
+	}
+
+public:
+	// +Vector
+	friend Vec3 operator+(Vec3 v) noexcept
+	{
+		return v;
+	}
+
+	// -Vector
+	friend Vec3 operator-(Vec3 v) noexcept
+	{
+		return Vec3{-v.x, -v.y, -v.z};
+	}
+
+	// Vector + Vector
+	friend Vec3 operator+(Vec3 a, Vec3 b) noexcept
+	{
+		return Vec3{a.x + b.x, a.y + b.y, a.z + b.z};
+	}
+
+	// Vector - Vector
+	friend Vec3 operator-(Vec3 a, Vec3 b) noexcept
+	{
+		return Vec3{a.x - b.x, a.y - b.y, a.z - b.z};
+	}
+
+	// Vector * Scalar
+	friend Vec3 operator*(Vec3 v, float s) noexcept
+	{
+		return Vec3{v.x * s, v.y * s, v.z * s};
+	}
+
+	// Scalar * Vector
+	friend Vec3 operator*(float s, Vec3 v) noexcept
+	{
+		return Vec3{v.x * s, v.y * s, v.z * s};
+	}
+
+	// Vector / Scalar
+	friend Vec3 operator/(Vec3 v, float s) noexcept
+	{
+		return Vec3{v.x / s, v.y / s, v.z / s};
+	}
+
+public:
+	friend float dot_product(Vec3 a, Vec3 b) noexcept
+	{
+		return a.x * b.x + a.y * b.y + a.z * b.z;
+	}
 };
 
 Vec3 getPosition(const ISceneNode& node)
