@@ -421,7 +421,6 @@ public:
 public:
 	virtual void processInput(bool register_input) {};
 	virtual void updateBegin() {};
-	virtual void updateEnd() {};
 
 public:
 	virtual ISceneNode& getTransform() = 0;
@@ -553,17 +552,6 @@ public:
 		const float angle_rad = m_angle * numbers::deg_to_rad;
 
 		velocity = velocity + Vec3{sin(angle_rad), 0, cos(angle_rad)} * forward_axis.delta;
-	}
-
-	virtual void updateEnd() override
-	{
-		DynamicModel::updateEnd();
-
-		if (forward_axis.delta > 0)
-			setOrientation(atan2(velocity.x, velocity.z) * numbers::rad_to_deg);
-
-		if (forward_axis.delta < 0)
-			setOrientation(atan2(-velocity.x, -velocity.z) * numbers::rad_to_deg);
 	}
 
 public:
@@ -1352,18 +1340,6 @@ void main() try
 				cube_manager.applyVelocities(player, enemy);
 				cube_manager.processCollisions(player, enemy);
 				cube_manager.checkBounds(player, enemy);
-
-				for (StaticModel* const static_object : static_objects)
-					DEREF(static_object).updateEnd();
-
-				if (player)
-					DEREF(player).updateEnd();
-
-				if (enemy)
-					DEREF(enemy).updateEnd();
-
-				for (StaticCamera* const camera : cameras)
-					DEREF(camera).updateEnd();
 
 				if (player)
 				{
