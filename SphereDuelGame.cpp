@@ -868,21 +868,60 @@ private:
 public:
 	void respawnAll(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr)
 	{
-		Vec3 outside = bounds_to;
+		const Vec3 outside = bounds_to + Vec3{separation, separation, separation};
 
-		outside.x += separation;
-		outside.y += separation;
-		outside.z += separation;
+		for (int i = 0; i < cubeCount(); i++)
+		{
+			DynamicModel& cube = getCube(i);
 
-		setPosition(m_hypercube.getTransform(), outside);
+			setPosition(cube.getTransform(), outside);
+			cube.velocity = {};
+		}
 
-		for (DynamicModel* cube : m_cubes)
-			setPosition(DEREF(cube).getTransform(), outside);
+		for (int i = 0; i < cubeCount(); i++)
+		{
+			DynamicModel& cube = getCube(i);
 
-		setPosition(m_hypercube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, m_hypercube.radius));
+			setPosition(cube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, cube.radius));
+		}
+	}
 
-		for (DynamicModel* cube : m_cubes)
-			setPosition(DEREF(cube).getTransform(), getNextSpawn(player_ptr, enemy_ptr, DEREF(cube).radius));
+	void applyVelocities(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
+	{
+		auto damp = [&](Vec3 v) -> Vec3
+		{
+			return v * damping_multiplier;
+
+			const float l = v.length();
+
+			if (!l)
+				return {};
+
+			return v / l * max(0.f, l - damping_limit);
+		};
+
+		for (int i = 0; i < cubeCount(); i++)
+		{
+			DynamicModel& cube = getCube(i);
+
+			cube.velocity = damp(cube.velocity);
+
+			// TODO: hypercube
+		}
+
+		if (player_ptr)
+		{
+			SphereDynamicModel& player = DEREF(player_ptr);
+
+			player.velocity = damp(player.velocity);
+		}
+
+		if (enemy_ptr)
+		{
+			SphereDynamicModel& enemy = DEREF(enemy_ptr);
+
+			enemy.velocity = damp(enemy.velocity);
+		}
 	}
 
 	void processCollisions(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
