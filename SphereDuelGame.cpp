@@ -549,7 +549,7 @@ public:
 
 		const float angle_rad = m_angle * numbers::deg_to_rad;
 
-		velocity = Vec3{forward_axis.delta * sin(angle_rad), 0, forward_axis.delta * cos(angle_rad)};
+		velocity = velocity + Vec3{sin(angle_rad), 0, cos(angle_rad)} * forward_axis.delta;
 	}
 
 	virtual void updateEnd() override
