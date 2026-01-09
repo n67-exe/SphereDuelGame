@@ -166,9 +166,13 @@ namespace numbers
 	template <typename T>
 	constexpr T rad_to_deg_v = 57.29577951308232087679815481410517L; // = 360 / 2pi
 
+	template <typename T>
+	constexpr T largest_v = numeric_limits<T>::has_infinity ? numeric_limits<T>::infinity() : numeric_limits<T>::max(); // largest possible number
+
 	constexpr float pi = pi_v<float>;
 	constexpr float deg_to_rad = deg_to_rad_v<float>;
 	constexpr float rad_to_deg = rad_to_deg_v<float>;
+	constexpr float largest = largest_v<float>;
 }
 
 struct Vec3
