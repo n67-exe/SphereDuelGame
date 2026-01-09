@@ -1243,14 +1243,24 @@ public:
 
 		const float relative_angle = m_angle * numbers::deg_to_rad - atan2(relative_position.x, relative_position.z);
 
-		if (sin(relative_angle) > rotation_threshold)
-			rotation_axis.delta = -rotation_axis.multiplier;
-
-		if (sin(relative_angle) < -rotation_threshold)
-			rotation_axis.delta = rotation_axis.multiplier;
-
 		if (cos(relative_angle) > movement_threshold)
+		{
 			forward_axis.delta = forward_axis.multiplier;
+
+			if (sin(relative_angle) > rotation_threshold)
+				rotation_axis.delta = -rotation_axis.multiplier;
+
+			if (sin(relative_angle) < -rotation_threshold)
+				rotation_axis.delta = rotation_axis.multiplier;
+		}
+		else
+		{
+			if (sin(relative_angle) >= 0)
+				rotation_axis.delta = -rotation_axis.multiplier;
+
+			if (sin(relative_angle) < 0)
+				rotation_axis.delta = rotation_axis.multiplier;
+		}
 	}
 
 public:
@@ -1481,6 +1491,7 @@ void main() try
 			DEREF(enemy).rotation_axis.multiplier = 2;
 
 			DEREF(enemy).movement_threshold = 0.75;
+			DEREF(enemy).rotation_threshold = 0.1;
 
 			DEREF(enemy).hyper_time = 5;
 			DEREF(enemy).radius_multiplier = 1.2;
