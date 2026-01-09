@@ -533,6 +533,30 @@ public:
 	}
 
 public:
+	bool isHyper() const noexcept
+	{
+		return m_hyper_timer > 0;
+	}
+
+	int getPoints() const noexcept
+	{
+		return m_points;
+	}
+
+	void increasePoints(int count, bool hyper = false)
+	{
+		m_points += count;
+
+		// TODO: scale
+
+		if (hyper && hyper_time > 0)
+		{
+			setSkin(m_hyper_skin);
+
+			m_hyper_timer += hyper_time;
+		}
+	}
+
 	void setOrientation(float angle_horizontal = 0)
 	{
 		m_angle = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
@@ -547,6 +571,15 @@ public:
 	{
 		DynamicModel::update(delta_time);
 
+		m_hyper_timer -= delta_time;
+
+		if (m_hyper_timer < 0)
+		{
+			setSkin(m_normal_skin);
+
+			m_hyper_timer = 0;
+		}
+
 		setOrientation(m_angle + rotation_axis.delta);
 
 		const float angle_rad = m_angle * numbers::deg_to_rad;
@@ -556,11 +589,13 @@ public:
 
 public:
 	AxisControl forward_axis, rotation_axis;
-	int points = 0;
+	float hyper_time = 0;
 	bool dead = false;
 
 protected:
 	float m_angle = 0;
+	float m_hyper_timer = 0;
+	int m_points = 0;
 
 	string m_normal_skin, m_hyper_skin;
 };
@@ -1075,7 +1110,7 @@ public:
 				respawn_cube(index, closest_collision_time);
 				calculate_collision_time(index);
 
-				player.points += 10;
+				player.increasePoints(10, &cube == &m_hypercube);
 				// TODO: hypercube
 			}
 			break; case CollisionType::EnemyCube:
@@ -1086,7 +1121,7 @@ public:
 				respawn_cube(index, closest_collision_time);
 				calculate_collision_time(index);
 
-				enemy.points += 10;
+				enemy.increasePoints(10, &cube == &m_hypercube);
 				// TODO: hypercube
 			}
 			break; case CollisionType::PlayerEnemy:
@@ -1094,9 +1129,9 @@ public:
 				SphereDynamicModel& player = DEREF(player_ptr);
 				SphereDynamicModel& enemy = DEREF(enemy_ptr);
 
-				if (player.points > enemy.points + 40)
+				if (player.getPoints() > enemy.getPoints() + 40)
 				{
-					player.points += 40;
+					player.increasePoints(40);
 					enemy.dead = true;
 
 					enemy_ptr = nullptr;
@@ -1104,9 +1139,9 @@ public:
 					break; // no recalculation since movement is not affected
 				}
 
-				if (enemy.points > player.points + 40)
+				if (enemy.getPoints() > player.getPoints() + 40)
 				{
-					enemy.points += 40;
+					enemy.increasePoints(40);
 					player.dead = true;
 
 					player_ptr = nullptr;
@@ -1217,11 +1252,15 @@ void main() try
 		{
 			DEREF(player).forward_axis = {Key_W, Key_S, 1};
 			DEREF(player).rotation_axis = {Key_D, Key_A, 1};
+
+			DEREF(player).hyper_time = 5;
 		}
 
 		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "enemysphere.jpg", "hypersphere.jpg", {0, 10, 0}, 10};
 		{
 			DEREF(enemy).random_generator.seed(1);
+
+			DEREF(enemy).hyper_time = 5;
 		}
 
 		DynamicModelManager cube_manager{engine, cube_mesh, "minicube.jpg", "hypercube.jpg", 12, 2.5};
@@ -1343,7 +1382,7 @@ void main() try
 
 				if (player)
 				{
-					player_points = DEREF(player).points;
+					player_points = DEREF(player).getPoints();
 
 					if (DEREF(player).dead)
 					{
@@ -1355,7 +1394,7 @@ void main() try
 
 				if (enemy)
 				{
-					enemy_points = DEREF(enemy).points;
+					enemy_points = DEREF(enemy).getPoints();
 
 					if (DEREF(enemy).dead)
 					{
