@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <string>
 #include <thread>
+#include <vector>
 
 #include <TL-Engine.h>
 
@@ -928,12 +929,221 @@ public:
 
 	void processCollisions(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
 	{
-		// collision
+		if (!player_ptr && !enemy_ptr)
+			return;
+
+		int count = m_cubes.size() + 1;
+
+		float player_time = 0, enemy_time = 0;
+		static vector<float> cube_times, player_collision_times, enemy_collision_times;
+
+		float player_enemy_collision_time;
+
+		cube_times.assign(count, 0);
+
+		if (player_ptr)
+			player_collision_times.resize(count);
+
+		if (enemy_ptr)
+			enemy_collision_times.resize(count);
+
+		auto respawn_cube = [&](int i, float time)
+		{
+			DynamicModel& cube = getCube(i);
+
+			setPosition(cube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, cube.radius));
+			cube.velocity = {};
+
+			cube_times[i] = time;
+		};
+
+		auto advance_time = [&](float time)
+		{
+			for (int i = 0; i < count; i++)
+			{
+				DynamicModel& cube = getCube(i);
+
+				setPosition(cube.getTransform(), getPosition(cube.getTransform()) + cube.velocity * (time - cube_times[i]));
+
+				cube_times[i] = time;
+			}
+
+			if (player_ptr)
+			{
+				SphereDynamicModel& player = DEREF(player_ptr);
+
+				setPosition(player.getTransform(), getPosition(player.getTransform()) + player.velocity * (time - player_time));
+
+				player_time = time;
+			}
+
+			if (enemy_ptr)
+			{
+				SphereDynamicModel& enemy = DEREF(enemy_ptr);
+
+				setPosition(enemy.getTransform(), getPosition(enemy.getTransform()) + enemy.velocity * (time - enemy_time));
+
+				enemy_time = time;
+			}
+		};
+
+		auto calculate_collision_time = [&](int i)
+		{
+			if (player_ptr)
+				player_collision_times[i] = timeOfCollision(DEREF(player_ptr), player_time, getCube(i), cube_times[i]);
+
+			if (enemy_ptr)
+				enemy_collision_times[i] = timeOfCollision(DEREF(enemy_ptr), enemy_time, getCube(i), cube_times[i]);
+		};
+
+		auto calculate_all_collision_times = [&]()
+		{
+			if (player_ptr)
+			{
+				SphereDynamicModel& player = DEREF(player_ptr);
+
+				for (int i = 0; i < count; i++)
+					player_collision_times[i] = timeOfCollision(player, player_time, getCube(i), cube_times[i]);
+			}
+
+			if (enemy_ptr)
+			{
+				SphereDynamicModel& enemy = DEREF(enemy_ptr);
+
+				for (int i = 0; i < count; i++)
+					enemy_collision_times[i] = timeOfCollision(enemy, enemy_time, getCube(i), cube_times[i]);
+			}
+
+			if (player_ptr && enemy_ptr)
+				player_enemy_collision_time = timeOfCollision(DEREF(player_ptr), player_time, DEREF(enemy_ptr), enemy_time);
+		};
+
+		calculate_all_collision_times();
+
+		enum class CollisionType
+		{
+			None,
+			PlayerCube,
+			EnemyCube,
+			PlayerEnemy,
+		};
+
+		while (true)
+		{
+			CollisionType closest_collision_type = CollisionType::None;
+			float closest_collision_time = numbers::largest;
+
+			int index;
+
+			if (player_ptr)
+			{
+				vector<float>::iterator closest_player_collision_time = min_element(RANGE(player_collision_times));
+
+				if (*closest_player_collision_time < closest_collision_time)
+				{
+					closest_collision_type = CollisionType::PlayerCube;
+					closest_collision_time = *closest_player_collision_time;
+
+					index = closest_player_collision_time - begin(player_collision_times);
+				}
+			}
+
+			if (enemy_ptr)
+			{
+				vector<float>::iterator closest_enemy_collision_time = min_element(RANGE(enemy_collision_times));
+
+				if (*closest_enemy_collision_time < closest_collision_time)
+				{
+					closest_collision_type = CollisionType::EnemyCube;
+					closest_collision_time = *closest_enemy_collision_time;
+
+					index = closest_enemy_collision_time - begin(enemy_collision_times);
+				}
+			}
+
+			if (player_ptr && enemy_ptr)
+			{
+				if (player_enemy_collision_time < closest_collision_time)
+				{
+					closest_collision_type = CollisionType::PlayerEnemy;
+					closest_collision_time = player_enemy_collision_time;
+				}
+			}
+
+			if (closest_collision_time >= 1)
+				break;
+
+			ASSERT(closest_collision_type != CollisionType::None);
+
+			advance_time(closest_collision_time);
+
+			switch (closest_collision_type)
+			{
+			break; case CollisionType::PlayerCube:
+			{
+				SphereDynamicModel& player = DEREF(player_ptr);
+				DynamicModel& cube = getCube(index);;
+
+				respawn_cube(index, closest_collision_time);
+				calculate_collision_time(index);
+
+				player.points += 10;
+				// TODO: hypercube
+			}
+			break; case CollisionType::EnemyCube:
+			{
+				SphereDynamicModel& enemy = DEREF(enemy_ptr);
+				DynamicModel& cube = getCube(index);
+
+				respawn_cube(index, closest_collision_time);
+				calculate_collision_time(index);
+
+				enemy.points += 10;
+				// TODO: hypercube
+			}
+			break; case CollisionType::PlayerEnemy:
+			{
+				SphereDynamicModel& player = DEREF(player_ptr);
+				SphereDynamicModel& enemy = DEREF(enemy_ptr);
+
+				if (player.points > enemy.points + 40)
+				{
+					player.points += 40;
+					enemy.dead = true;
+
+					enemy_ptr = nullptr;
+
+					break; // no recalculation since movement is not affected
+				}
+
+				if (enemy.points > player.points + 40)
+				{
+					enemy.points += 40;
+					player.dead = true;
+
+					player_ptr = nullptr;
+
+					break; // no recalculation since movement is not affected
+				}
+
+				resolveCollision(player, enemy, bounce_force);
+
+				player.velocity.y = 0;
+				enemy.velocity.y = 0;
+
+				calculate_all_collision_times();
+			}
+			}
+		}
+
+		advance_time(1);
+	}
+
+	void checkBounds(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
+	{
 		if (player_ptr)
 		{
 			SphereDynamicModel& player = DEREF(player_ptr);
-
-			player.getTransform().Move(player.velocity.x, player.velocity.y, player.velocity.z);
 
 			if (!withinBounds(getPosition(player.getTransform())))
 				player.dead = true;
@@ -942,8 +1152,6 @@ public:
 		if (enemy_ptr)
 		{
 			SphereDynamicModel& enemy = DEREF(enemy_ptr);
-
-			enemy.getTransform().Move(enemy.velocity.x, enemy.velocity.y, enemy.velocity.z);
 
 			if (!withinBounds(getPosition(enemy.getTransform())))
 				enemy.dead = true;
@@ -958,6 +1166,9 @@ public:
 	float separation = 0;
 	Vec3 bounds_from, bounds_to;
 	minstd_rand random_generator;
+
+	float bounce_force = 0;
+	float damping_multiplier = 0, damping_limit = 0;
 };
 
 template <typename F>
@@ -1030,6 +1241,8 @@ void main() try
 			cube_manager.bounds_from = {-100, 2.5, -100};
 			cube_manager.bounds_to = {100, 2.5, 100};
 			cube_manager.separation = 10;
+			cube_manager.damping_multiplier = 0.75;
+			cube_manager.bounce_force = 4;
 
 			cube_manager.respawnAll(player, enemy);
 		}
@@ -1136,7 +1349,9 @@ void main() try
 					DEREF(camera).updateBegin();
 				
 				// TODO: collisions
+				cube_manager.applyVelocities(player, enemy);
 				cube_manager.processCollisions(player, enemy);
+				cube_manager.checkBounds(player, enemy);
 
 				for (StaticModel* const static_object : static_objects)
 					DEREF(static_object).updateEnd();
