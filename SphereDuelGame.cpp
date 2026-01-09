@@ -543,18 +543,30 @@ public:
 		return m_points;
 	}
 
-	void increasePoints(int count, bool hyper = false)
+	// returns true if the radius changed
+	bool increasePoints(int count, bool hyper = false)
 	{
+		const int old_scale_level = min(m_points / point_threshold, max_scale_level);
+
 		m_points += count;
 
-		// TODO: scale
+		const int new_scale_level = min(m_points / point_threshold, max_scale_level);
+
+		const float radius_scale = pow(radius_multiplier, static_cast<float>(new_scale_level - old_scale_level));
+
+		m_model.MoveY(radius * (radius_scale - 1));
+		m_model.Scale(radius_scale);
+
+		radius *= radius_scale;
 
 		if (hyper && hyper_time > 0)
 		{
 			setSkin(m_hyper_skin);
 
-			m_hyper_timer += hyper_time;
+			m_hyper_timer = hyper_time;
 		}
+
+		return radius_scale != 1;
 	}
 
 	void setOrientation(float angle_horizontal = 0)
@@ -589,7 +601,8 @@ public:
 
 public:
 	AxisControl forward_axis, rotation_axis;
-	float hyper_time = 0;
+	float hyper_time = 0, radius_multiplier = 1;
+	int max_scale_level = 0, point_threshold = 1;
 	bool dead = false;
 
 protected:
@@ -598,184 +611,6 @@ protected:
 	int m_points = 0;
 
 	string m_normal_skin, m_hyper_skin;
-};
-
-class PlayerSphereDynamicModel final : public SphereDynamicModel
-{
-public:
-	using SphereDynamicModel::SphereDynamicModel;
-
-public:
-	virtual void processInput(bool register_input) override
-	{
-		SphereDynamicModel::processInput(register_input);
-
-		forward_axis.updateDelta(m_engine, register_input);
-		rotation_axis.updateDelta(m_engine, register_input);
-	}
-};
-
-class EnemySphereDynamicModel final : public SphereDynamicModel
-{
-public:
-	using SphereDynamicModel::SphereDynamicModel;
-
-public:
-	virtual void processInput(bool register_input) override
-	{
-		SphereDynamicModel::processInput(register_input);
-
-		// TODO: proper logic
-		static uniform_int_distribution<> dist{0, 1};
-
-		forward_axis.delta = forward_axis.multiplier * dist(random_generator);
-		rotation_axis.delta = rotation_axis.multiplier * dist(random_generator);
-	}
-
-public:
-	minstd_rand random_generator;
-};
-
-class StaticCamera : public GameObject
-{
-public:
-	explicit StaticCamera(I3DEngine& engine, Vec3 position = Vec3{})
-		: GameObject(engine), m_camera(DEREF(m_engine.CreateCamera(kManual, position.x, position.y, position.z)))
-	{}
-
-	virtual ~StaticCamera() override
-	{
-		m_engine.RemoveCamera(&m_camera);
-	}
-
-	StaticCamera(const StaticCamera&) = delete;
-	StaticCamera(StaticCamera&&) = delete;
-
-	StaticCamera& operator=(const StaticCamera&) = delete;
-	StaticCamera& operator=(StaticCamera&&) = delete;
-
-public:
-	void renderScene() /* surprisingly can be made const */
-	{
-		m_engine.DrawScene(&m_camera);
-	}
-
-public:
-	virtual ISceneNode& getTransform() override
-	{
-		return m_camera;
-	}
-
-	virtual const ISceneNode& getTransform() const override
-	{
-		return m_camera;
-	}
-
-protected:
-	ICamera& m_camera;
-};
-
-class KeyboardControlledCamera : public StaticCamera
-{
-public:
-	using StaticCamera::StaticCamera;
-
-public:
-	virtual void processInput(bool register_input) override
-	{
-		StaticCamera::processInput(register_input);
-
-		x_axis.updateDelta(m_engine, register_input);
-		y_axis.updateDelta(m_engine, register_input);
-		z_axis.updateDelta(m_engine, register_input);
-	}
-
-	virtual void update(float delta_time) override
-	{
-		StaticCamera::update(delta_time);
-
-		m_camera.Move(x_axis.delta, y_axis.delta, z_axis.delta);
-	}
-
-public:
-	AxisControl x_axis, y_axis, z_axis;
-
-	// TODO: bounds
-};
-
-class DebugCamera final : public KeyboardControlledCamera
-{
-public:
-	using KeyboardControlledCamera::KeyboardControlledCamera;
-
-private:
-	// move towards a direction defined in spherical coordinates
-	void moveSpherical(float distance, float angle_h, float angle_v)
-	{
-		angle_h *= numbers::deg_to_rad;
-		angle_v *= numbers::deg_to_rad;
-
-		const float dx = distance * cos(angle_v) * sin(angle_h);
-		const float dz = distance * cos(angle_v) * cos(angle_h);
-		const float dy = distance * sin(angle_v) * -1;
-
-		m_camera.Move(dx, dy, dz);
-	}
-
-public:
-	void setOrientation(float angle_horizontal = 0, float angle_vertical = 0)
-	{
-		m_angle_h = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
-		m_angle_v = max(min(angle_vertical, 90.f), -90.f);
-
-		m_camera.ResetOrientation();
-
-		m_camera.RotateX(m_angle_v);
-		m_camera.RotateY(m_angle_h);
-	}
-
-public:
-	virtual void processInput(bool register_input) override
-	{
-		KeyboardControlledCamera::processInput(register_input);
-
-		fly_toggle.updateState(m_engine, register_input);
-		mouse_toggle.updateState(m_engine, register_input);
-		accelerate_button.updateState(m_engine, register_input);
-		mouse_move.updateDelta(m_engine, register_input);
-
-		// stop mouse capture if we start ignoring user input
-		// if the window loses focus, a bug in TL-Engine hides the cursor permanently over the window
-		if (!register_input)
-			mouse_toggle.state.setNewState(false);
-
-		if (mouse_toggle.state.just_changed)
-			mouse_toggle.state.value ? m_engine.StartMouseCapture() : m_engine.StopMouseCapture();
-	}
-
-	virtual void update(float delta_time) override
-	{
-		StaticCamera::update(delta_time); // not KeyboardControlledCamera since we redefine the movement logic here
-
-		if (mouse_toggle.state.value)
-			setOrientation(m_angle_h + mouse_move.delta_x, m_angle_v + mouse_move.delta_y);
-
-		const float camera_speed_multiplier = (accelerate_button.state.value ? acceleration_multiplier : 1.f);
-
-		moveSpherical(camera_speed_multiplier * x_axis.delta, m_angle_h + 90, 0);
-		moveSpherical(camera_speed_multiplier * z_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0));
-		moveSpherical(camera_speed_multiplier * y_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0) - 90);
-	}
-
-public:
-	ToggleControl fly_toggle, mouse_toggle;
-	ButtonControl accelerate_button;
-	MouseControl mouse_move;
-
-	float acceleration_multiplier = 2;
-
-protected:
-	float m_angle_h = 0, m_angle_v = 0;
 };
 
 class DynamicModelManager
@@ -809,25 +644,6 @@ public:
 	DynamicModelManager& operator=(DynamicModelManager&&) = delete;
 
 private:
-	int cubeCount() const
-	{
-		return m_cubes.size() + 1;
-	}
-
-	DynamicModel& getCube(int index)
-	{
-		ASSERT(index <= m_cubes.size());
-
-		return (index == m_cubes.size() ? m_hypercube : DEREF(m_cubes[index]));
-	}
-
-	const DynamicModel& getCube(int index) const
-	{
-		ASSERT(index <= m_cubes.size());
-
-		return (index == m_cubes.size() ? m_hypercube : DEREF(m_cubes[index]));
-	}
-
 	bool withinBounds(Vec3 point) const noexcept
 	{
 		if (bounds_from.x != bounds_to.x)
@@ -892,6 +708,25 @@ private:
 	}
 
 public:
+	int cubeCount() const
+	{
+		return m_cubes.size() + 1;
+	}
+
+	DynamicModel& getCube(int index)
+	{
+		ASSERT(index <= m_cubes.size());
+
+		return (index == m_cubes.size() ? m_hypercube : DEREF(m_cubes[index]));
+	}
+
+	const DynamicModel& getCube(int index) const
+	{
+		ASSERT(index <= m_cubes.size());
+
+		return (index == m_cubes.size() ? m_hypercube : DEREF(m_cubes[index]));
+	}
+
 	void respawnAll(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr)
 	{
 		const Vec3 outside = bounds_to + Vec3{separation, separation, separation};
@@ -1043,6 +878,55 @@ public:
 			}
 		};
 
+		auto expand_sphere = [&](SphereDynamicModel& sphere, SphereDynamicModel* other_sphere) -> pair<int, bool>
+		{
+			int points = 0;
+			bool hyper = false;
+
+			for (int i = 0; i < count; i++)
+			{
+				DynamicModel& cube = getCube(i);
+
+				if ((getPosition(cube.getTransform()) - getPosition(sphere.getTransform())).length() < sphere.radius + cube.radius)
+				{
+					if (&cube == &m_hypercube)
+						hyper = true;
+					else
+						points += 10;
+
+					respawn_cube(i, cube_times[i]);
+				}
+			}
+
+			if (other_sphere)
+			{
+				SphereDynamicModel& other = DEREF(other_sphere);
+
+				const Vec3 d_p = getPosition(other.getTransform()) - getPosition(sphere.getTransform());
+				const float s_r = sphere.radius + other.radius;
+
+				if (d_p.length() < s_r)
+				{
+					Vec3 h_d_p = d_p;
+
+					h_d_p.y = 0;
+
+					const float d_r_2 = (sphere.radius - other.radius) * (sphere.radius - other.radius);
+					const float h_l = sqrt((s_r * s_r) - d_r_2);
+					const float l = h_d_p.length();
+					const float d_l = 2 * (h_l - l);
+
+					const Vec3 dir = h_d_p / l;
+
+					setPosition(other.getTransform(), getPosition(other.getTransform()) + dir * d_l);
+
+					other.velocity = other.velocity - (2 * dot_product(other.velocity, dir) - bounce_force) * dir;
+				}
+			}
+
+			return {points, hyper};
+		};
+
 		auto calculate_collision_time = [&](int i)
 		{
 			if (player_ptr)
@@ -1138,12 +1022,33 @@ public:
 			break; case CollisionType::PlayerCube:
 			{
 				SphereDynamicModel& player = DEREF(player_ptr);
-				DynamicModel& cube = getCube(index);;
+				DynamicModel& cube = getCube(index);
 
 				respawn_cube(index, closest_collision_time);
-				calculate_collision_time(index);
 
-				player.increasePoints(10, &cube == &m_hypercube);
+				if (player.increasePoints(&cube == &m_hypercube ? 0 : 10, &cube == &m_hypercube))
+				{
+					while (true)
+					{
+						int points;
+						bool hyper;
+
+						auto p = expand_sphere(player, enemy_ptr);
+
+						points = p.first;
+						hyper = p.second;
+
+						if (!player.increasePoints(points, hyper))
+							break;
+					}
+
+					calculate_all_collision_times();
+				}
+				else
+				{
+					calculate_collision_time(index);
+				}
+
 			}
 			break; case CollisionType::EnemyCube:
 			{
@@ -1151,9 +1056,29 @@ public:
 				DynamicModel& cube = getCube(index);
 
 				respawn_cube(index, closest_collision_time);
-				calculate_collision_time(index);
 
-				enemy.increasePoints(10, &cube == &m_hypercube);
+				if (enemy.increasePoints(&cube == &m_hypercube ? 0 : 10, &cube == &m_hypercube))
+				{
+					while (true)
+					{
+						int points;
+						bool hyper;
+
+						auto p = expand_sphere(enemy, player_ptr);
+
+						points = p.first;
+						hyper = p.second;
+
+						if (!enemy.increasePoints(points, hyper))
+							break;
+					}
+
+					calculate_all_collision_times();
+				}
+				else
+				{
+					calculate_collision_time(index);
+				}
 			}
 			break; case CollisionType::PlayerEnemy:
 			{
@@ -1162,22 +1087,56 @@ public:
 
 				if (player.getPoints() > enemy.getPoints() + 40)
 				{
-					player.increasePoints(40);
 					enemy.dead = true;
-
 					enemy_ptr = nullptr;
 
-					break; // no recalculation since movement is not affected
+					if (player.increasePoints(40))
+					{
+						while (true)
+						{
+							int points;
+							bool hyper;
+
+							auto p = expand_sphere(player, enemy_ptr);
+
+							points = p.first;
+							hyper = p.second;
+
+							if (!player.increasePoints(points, hyper))
+								break;
+						}
+
+						calculate_all_collision_times();
+					}
+
+					break;
 				}
 
 				if (enemy.getPoints() > player.getPoints() + 40)
 				{
-					enemy.increasePoints(40);
 					player.dead = true;
-
 					player_ptr = nullptr;
 
-					break; // no recalculation since movement is not affected
+					if (enemy.increasePoints(40))
+					{
+						while (true)
+						{
+							int points;
+							bool hyper;
+
+							auto p = expand_sphere(enemy, player_ptr);
+
+							points = p.first;
+							hyper = p.second;
+
+							if (!enemy.increasePoints(points, hyper))
+								break;
+						}
+
+						calculate_all_collision_times();
+					}
+
+					break;
 				}
 
 				resolveCollision(player, enemy, bounce_force);
@@ -1226,6 +1185,223 @@ public:
 	float pull_range = 0, pull_multiplier = 1;
 };
 
+class PlayerSphereDynamicModel final : public SphereDynamicModel
+{
+public:
+	using SphereDynamicModel::SphereDynamicModel;
+
+public:
+	virtual void processInput(bool register_input) override
+	{
+		SphereDynamicModel::processInput(register_input);
+
+		forward_axis.updateDelta(m_engine, register_input);
+		rotation_axis.updateDelta(m_engine, register_input);
+	}
+};
+
+class EnemySphereDynamicModel final : public SphereDynamicModel
+{
+public:
+	using SphereDynamicModel::SphereDynamicModel;
+
+public:
+	virtual void processInput(bool register_input) override
+	{
+		SphereDynamicModel::processInput(register_input);
+
+		forward_axis.delta = 0;
+		rotation_axis.delta = 0;
+
+		if (!model_manager)
+			return;
+
+		DynamicModelManager& manager = DEREF(model_manager);
+
+		float min_distance = numbers::largest;
+		int index = 0;
+
+		for (int i = 0; i < manager.cubeCount(); i++)
+		{
+			DynamicModel& cube = manager.getCube(i);
+
+			float distance = (getPosition(cube.getTransform()) - getPosition(getTransform())).length();
+
+			if (distance <= min_distance)
+			{
+				min_distance = distance;
+				index = i;
+			}
+		}
+
+		if (isinf(min_distance))
+			return;
+
+		DynamicModel& cube = manager.getCube(index);
+
+		const Vec3 relative_position = getPosition(cube.getTransform()) - getPosition(getTransform());
+
+		const float relative_angle = m_angle * numbers::deg_to_rad - atan2(relative_position.x, relative_position.z);
+
+		if (sin(relative_angle) > rotation_threshold)
+			rotation_axis.delta = -rotation_axis.multiplier;
+
+		if (sin(relative_angle) < -rotation_threshold)
+			rotation_axis.delta = rotation_axis.multiplier;
+
+		if (cos(relative_angle) > movement_threshold)
+			forward_axis.delta = forward_axis.multiplier;
+	}
+
+public:
+	minstd_rand random_generator;
+	DynamicModelManager* model_manager = nullptr;
+
+	float rotation_threshold = 0, movement_threshold = 0;
+};
+
+class StaticCamera : public GameObject
+{
+public:
+	explicit StaticCamera(I3DEngine& engine, Vec3 position = Vec3{})
+		: GameObject(engine), m_camera(DEREF(m_engine.CreateCamera(kManual, position.x, position.y, position.z)))
+	{}
+
+	virtual ~StaticCamera() override
+	{
+		m_engine.RemoveCamera(&m_camera);
+	}
+
+	StaticCamera(const StaticCamera&) = delete;
+	StaticCamera(StaticCamera&&) = delete;
+
+	StaticCamera& operator=(const StaticCamera&) = delete;
+	StaticCamera& operator=(StaticCamera&&) = delete;
+
+public:
+	void renderScene() /* surprisingly can be made const */
+	{
+		m_engine.DrawScene(&m_camera);
+	}
+
+public:
+	virtual ISceneNode& getTransform() override
+	{
+		return m_camera;
+	}
+
+	virtual const ISceneNode& getTransform() const override
+	{
+		return m_camera;
+	}
+
+protected:
+	ICamera& m_camera;
+};
+
+class KeyboardControlledCamera : public StaticCamera
+{
+public:
+	using StaticCamera::StaticCamera;
+
+public:
+	virtual void processInput(bool register_input) override
+	{
+		StaticCamera::processInput(register_input);
+
+		x_axis.updateDelta(m_engine, register_input);
+		y_axis.updateDelta(m_engine, register_input);
+		z_axis.updateDelta(m_engine, register_input);
+	}
+
+	virtual void update(float delta_time) override
+	{
+		StaticCamera::update(delta_time);
+
+		m_camera.Move(x_axis.delta, y_axis.delta, z_axis.delta);
+	}
+
+public:
+	AxisControl x_axis, y_axis, z_axis;
+
+	// TODO: bounds
+};
+
+class DebugCamera final : public KeyboardControlledCamera
+{
+public:
+	using KeyboardControlledCamera::KeyboardControlledCamera;
+
+private:
+	// move towards a direction defined in spherical coordinates
+	void moveSpherical(float distance, float angle_h, float angle_v)
+	{
+		angle_h *= numbers::deg_to_rad;
+		angle_v *= numbers::deg_to_rad;
+
+		const float dx = distance * cos(angle_v) * sin(angle_h);
+		const float dz = distance * cos(angle_v) * cos(angle_h);
+		const float dy = distance * sin(angle_v) * -1;
+
+		m_camera.Move(dx, dy, dz);
+	}
+
+public:
+	void setOrientation(float angle_horizontal = 0, float angle_vertical = 0)
+	{
+		m_angle_h = remainder(remainder(angle_horizontal, 360.f) + 360.f, 360.f);
+		m_angle_v = max(min(angle_vertical, 90.f), -90.f);
+
+		m_camera.ResetOrientation();
+
+		m_camera.RotateX(m_angle_v);
+		m_camera.RotateY(m_angle_h);
+	}
+
+public:
+	virtual void processInput(bool register_input) override
+	{
+		KeyboardControlledCamera::processInput(register_input);
+
+		fly_toggle.updateState(m_engine, register_input);
+		mouse_toggle.updateState(m_engine, register_input);
+		accelerate_button.updateState(m_engine, register_input);
+		mouse_move.updateDelta(m_engine, register_input);
+
+		// stop mouse capture if we start ignoring user input
+		// if the window loses focus, a bug in TL-Engine hides the cursor permanently over the window
+		if (!register_input)
+			mouse_toggle.state.setNewState(false);
+
+		if (mouse_toggle.state.just_changed)
+			mouse_toggle.state.value ? m_engine.StartMouseCapture() : m_engine.StopMouseCapture();
+	}
+
+	virtual void update(float delta_time) override
+	{
+		StaticCamera::update(delta_time); // not KeyboardControlledCamera since we redefine the movement logic here
+
+		if (mouse_toggle.state.value)
+			setOrientation(m_angle_h + mouse_move.delta_x, m_angle_v + mouse_move.delta_y);
+
+		const float camera_speed_multiplier = (accelerate_button.state.value ? acceleration_multiplier : 1.f);
+
+		moveSpherical(camera_speed_multiplier * x_axis.delta, m_angle_h + 90, 0);
+		moveSpherical(camera_speed_multiplier * z_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0));
+		moveSpherical(camera_speed_multiplier * y_axis.delta, m_angle_h, (fly_toggle.state.value ? m_angle_v : 0) - 90);
+	}
+
+public:
+	ToggleControl fly_toggle, mouse_toggle;
+	ButtonControl accelerate_button;
+	MouseControl mouse_move;
+
+	float acceleration_multiplier = 2;
+
+protected:
+	float m_angle_h = 0, m_angle_v = 0;
+};
+
 template <typename F>
 string fixed_float_to_string(F value, streamsize before, streamsize after, char fill = ' ')
 {
@@ -1234,7 +1410,7 @@ string fixed_float_to_string(F value, streamsize before, streamsize after, char 
 
 	ostringstream str;
 
-	streamsize width = before + (after == 0 ? 0 : after + 1);
+	const streamsize width = before + (after == 0 ? 0 : after + 1);
 
 	str << fixed << right << setfill(fill) << setprecision(after) << setw(width) << value;
 
@@ -1250,7 +1426,7 @@ enum class GameState
 };
 
 // Enables debug camera (key 0)
-constexpr bool debug_mode = false;
+constexpr bool debug_mode = true;
 
 void main() try
 {
@@ -1259,6 +1435,8 @@ void main() try
 
 	try
 	{
+		random_device rd{};
+
 		// Fullscreen window crashes if it's not in focus
 		//ASSERT(engine.StartFullscreen(1920, 1080));
 		engine.StartWindowed();
@@ -1282,17 +1460,32 @@ void main() try
 
 		auto* player = new PlayerSphereDynamicModel{engine, sphere_mesh, "regularsphere.jpg", "hypersphere.jpg", {0, 10, 0}, 10};
 		{
-			DEREF(player).forward_axis = {Key_W, Key_S, 1};
-			DEREF(player).rotation_axis = {Key_D, Key_A, 1};
+			DEREF(player).forward_axis = {Key_W, Key_S, 0.2};
+			DEREF(player).rotation_axis = {Key_D, Key_A, 2};
 
 			DEREF(player).hyper_time = 5;
+			DEREF(player).radius_multiplier = 1.2;
+			DEREF(player).point_threshold = 40;
+			DEREF(player).max_scale_level = 5;
 		}
 
-		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "enemysphere.jpg", "hypersphere.jpg", {0, 10, 0}, 10};
+		const float angle = uniform_real_distribution<float>{0, numbers::pi * 2}(rd);
+
+		const Vec3 enemy_position = Vec3{sin(angle), 0, cos(angle)} * 80 + Vec3{0, 10, 0};
+
+		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "enemysphere.jpg", "hypersphere.jpg", enemy_position, 10};
 		{
-			DEREF(enemy).random_generator.seed(1);
+			DEREF(enemy).random_generator.seed(rd());
+
+			DEREF(enemy).forward_axis.multiplier = 0.2;
+			DEREF(enemy).rotation_axis.multiplier = 2;
+
+			DEREF(enemy).movement_threshold = 0.75;
 
 			DEREF(enemy).hyper_time = 5;
+			DEREF(enemy).radius_multiplier = 1.2;
+			DEREF(enemy).point_threshold = 40;
+			DEREF(enemy).max_scale_level = 5;
 		}
 
 		DynamicModelManager cube_manager{engine, cube_mesh, "minicube.jpg", "hypercube.jpg", 12, 2.5};
@@ -1340,6 +1533,8 @@ void main() try
 
 		StaticModel* const static_objects[] = {&water, &island, &skybox};
 		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
+
+		DEREF(enemy).model_manager = &cube_manager;
 
 		// Set initial game state
 		StaticCamera* active_camera = &camera_1;
@@ -1410,7 +1605,6 @@ void main() try
 				for (StaticCamera* const camera : cameras)
 					DEREF(camera).update(delta_time);
 				
-				// TODO: collisions
 				cube_manager.applyVelocities(player, enemy);
 				cube_manager.processCollisions(player, enemy);
 				cube_manager.checkBounds(player, enemy);
@@ -1442,10 +1636,16 @@ void main() try
 
 			if (state == GameState::Playing)
 			{
-				if (!enemy)
-					state = GameState::GameWon;
-				else if (!player)
+				if (!player)
 					state = GameState::GameOver;
+				else if (max(player_points, enemy_points) >= 120)
+				{
+					if (player_points > enemy_points)
+						state = GameState::GameWon;
+
+					if (player_points < enemy_points)
+						state = GameState::GameOver;
+				}
 			}
 
 			// Display FPS
@@ -1468,7 +1668,7 @@ void main() try
 			break; case GameState::GameWon:
 				main_font.Draw("Congrats, You WON", engine.GetWidth() / 2, engine.GetHeight() / 2, kGreen, kCentre, kVCentre);
 			break; case GameState::GameOver:
-				main_font.Draw("You Lose", engine.GetWidth() / 2, engine.GetHeight() / 2, kRed, kCentre, kVCentre);
+				main_font.Draw("You Lost", engine.GetWidth() / 2, engine.GetHeight() / 2, kRed, kCentre, kVCentre);
 			}
 
 			// Render the scene
