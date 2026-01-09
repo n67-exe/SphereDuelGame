@@ -475,9 +475,50 @@ public:
 	{}
 
 public:
+	friend float timeOfCollision(const DynamicModel& object_1, float time_1, const DynamicModel& object_2, float time_2)
+	{
+		const Vec3 d_p = (getPosition(object_1.getTransform()) - getPosition(object_2.getTransform())) - object_2.velocity * (time_1 - time_2);
+		const Vec3 d_v = object_1.velocity - object_2.velocity;
+
+		if (d_v == Vec3{})
+			return numbers::largest;
+
+		const float pv = dot_product(d_p, d_v);
+		const float v2 = d_v.squaredLength();
+		const float r = object_1.radius + object_2.radius;
+
+		const float D = (pv * pv) - (v2 * (d_p.squaredLength() - (r * r)));
+
+		ASSERT(!isnan(D));
+
+		if (D <= 0)
+			return numbers::largest;
+
+		const float t = -(pv + sqrt(D)) / v2;
+
+		ASSERT(!isnan(t));
+
+		if (t < 0)
+			return numbers::largest;
+
+		return time_1 + t;
+	}
+
+	friend void resolveCollision(DynamicModel& object_1, DynamicModel& object_2, float force = 0)
+	{
+		ASSERT(force >= 0); // or it will crash
+
+		const Vec3 d_p = getPosition(object_1.getTransform()) - getPosition(object_2.getTransform());
+
+		const Vec3 dir = d_p / d_p.length();
+
+		object_1.velocity = object_1.velocity - (2 * dot_product(object_1.velocity, dir) - force) * dir;
+		object_2.velocity = object_2.velocity - (2 * dot_product(object_2.velocity, dir) + force) * dir;
+	}
+
+public:
 	Vec3 velocity;
 	float radius;
-	float timestamp = 0; // relative to the current frame
 };
 
 class SphereDynamicModel : public DynamicModel
