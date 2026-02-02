@@ -519,8 +519,13 @@ public:
 
 		const Vec3 dir = d_p / d_p.length();
 
-		object_1.velocity = object_1.velocity - (2 * dot_product(object_1.velocity, dir) - force) * dir;
-		object_2.velocity = object_2.velocity - (2 * dot_product(object_2.velocity, dir) + force) * dir;
+		const float d_v_l = -dot_product(dir, object_1.velocity - object_2.velocity) + force;
+
+		ASSERT(d_v_l > 0);
+		ASSERT(d_v_l - force > 0);
+
+		object_1.velocity = object_1.velocity + d_v_l * dir;
+		object_2.velocity = object_2.velocity - d_v_l * dir;
 	}
 
 public:
