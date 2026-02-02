@@ -741,6 +741,14 @@ public:
 		return (index == m_cubes.size() ? m_hypercube : DEREF(m_cubes[index]));
 	}
 
+	void respawnCube(int index, const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr)
+	{
+		DynamicModel& cube = getCube(index);
+
+		setPosition(cube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, cube.radius) + Vec3{0, cube_respawn_height, 0});
+		cube.velocity = {};
+	}
+
 	void respawnAll(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr)
 	{
 		const Vec3 outside = bounds_to + Vec3{separation, separation, separation};
@@ -750,14 +758,15 @@ public:
 			DynamicModel& cube = getCube(i);
 
 			setPosition(cube.getTransform(), outside);
-			cube.velocity = {};
 		}
 
 		for (int i = 0; i < cubeCount(); i++)
 		{
 			DynamicModel& cube = getCube(i);
 
+			// ignore cube_respawn_height
 			setPosition(cube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, cube.radius));
+			cube.velocity = {};
 		}
 	}
 
@@ -872,10 +881,7 @@ public:
 
 		auto respawn_cube = [&](int i, float time)
 		{
-			DynamicModel& cube = getCube(i);
-
-			setPosition(cube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, cube.radius) + Vec3{0, cube_respawn_height, 0});
-			cube.velocity = {};
+			respawnCube(i, player_ptr, enemy_ptr);
 
 			cube_times[i] = time;
 		};
@@ -1194,11 +1200,23 @@ public:
 	// remove spheres out of bounds
 	void checkBounds(SphereDynamicModel* player_ptr, SphereDynamicModel* enemy_ptr)
 	{
+		for (int i = 0; i < cubeCount(); i++)
+		{
+			DynamicModel& cube = getCube(i);
+
+			Vec3 position = getPosition(cube.getTransform());
+
+			if (!withinBounds(position))
+				respawnCube(i, player_ptr, enemy_ptr);
+		}
+
 		if (player_ptr)
 		{
 			SphereDynamicModel& player = DEREF(player_ptr);
 
-			if (!withinBounds(getPosition(player.getTransform())))
+			Vec3 position = getPosition(player.getTransform());
+
+			if (!withinBounds(position))
 				player.dead = true;
 		}
 
@@ -1206,7 +1224,9 @@ public:
 		{
 			SphereDynamicModel& enemy = DEREF(enemy_ptr);
 
-			if (!withinBounds(getPosition(enemy.getTransform())))
+			Vec3 position = getPosition(enemy.getTransform());
+
+			if (!withinBounds(position))
 				enemy.dead = true;
 		}
 	}
