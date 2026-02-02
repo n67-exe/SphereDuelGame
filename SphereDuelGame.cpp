@@ -909,7 +909,7 @@ public:
 			{
 				DynamicModel& cube = getCube(i);
 
-				if ((getPosition(cube.getTransform()) - getPosition(sphere.getTransform())).length() < sphere.radius + cube.radius)
+				if ((getPosition(cube.getTransform()) - getPosition(sphere.getTransform())).length() < sphere.radius - cube.radius) // cubes fly in
 				{
 					if (&cube == &m_hypercube)
 						hyper = true;
@@ -954,10 +954,10 @@ public:
 		auto calculate_collision_time = [&](int i)
 		{
 			if (player_ptr)
-				player_collision_times[i] = timeOfCollision(DEREF(player_ptr), player_time, getCube(i), cube_times[i]);
+				player_collision_times[i] = timeOfCollision(DEREF(player_ptr), player_time, getCube(i), cube_times[i], -getCube(i).radius * 2);
 
 			if (enemy_ptr)
-				enemy_collision_times[i] = timeOfCollision(DEREF(enemy_ptr), enemy_time, getCube(i), cube_times[i]);
+				enemy_collision_times[i] = timeOfCollision(DEREF(enemy_ptr), enemy_time, getCube(i), cube_times[i], -getCube(i).radius * 2);
 		};
 
 		// calculate collision times for all cubes
@@ -968,7 +968,7 @@ public:
 				SphereDynamicModel& player = DEREF(player_ptr);
 
 				for (int i = 0; i < count; i++)
-					player_collision_times[i] = timeOfCollision(player, player_time, getCube(i), cube_times[i]);
+					player_collision_times[i] = timeOfCollision(player, player_time, getCube(i), cube_times[i], -getCube(i).radius * 2);
 			}
 
 			if (enemy_ptr)
@@ -976,7 +976,7 @@ public:
 				SphereDynamicModel& enemy = DEREF(enemy_ptr);
 
 				for (int i = 0; i < count; i++)
-					enemy_collision_times[i] = timeOfCollision(enemy, enemy_time, getCube(i), cube_times[i]);
+					enemy_collision_times[i] = timeOfCollision(enemy, enemy_time, getCube(i), cube_times[i], -getCube(i).radius * 2);
 			}
 
 			if (player_ptr && enemy_ptr)
