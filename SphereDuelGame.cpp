@@ -764,14 +764,29 @@ public:
 			return v * damping_multiplier;
 		};
 
-		auto pull_force = [&](Vec3 v) -> Vec3
+		auto pull_force = [&](Vec3 v, float radius, bool ignore_positive) -> Vec3
 		{
-			const float l = v.length();
+			const float length = v.length();
+			const float distance = length - radius;
 
-			if (l == 0 || l >= pull_range)
+			v = v / length; // normalize
+
+			if (distance <= 0)
+				return v * pull_multiplier;
+
+			if (ignore_positive)
 				return {};
 
-			return v * ((pull_range / l - 1) * pull_multiplier / l);
+			const float effective_range = pull_range - radius;
+
+			if (distance >= effective_range)
+				return {};
+
+			//const float t = distance / effective_range + 0.5f;
+
+			//return v * ((9 / (32 * t * t) - 0.125f) * pull_multiplier);
+
+			return v * ((effective_range - distance) / (effective_range + distance) * pull_multiplier);
 		};
 
 		for (int i = 0; i < cubeCount(); i++)
@@ -780,36 +795,30 @@ public:
 
 			cube.velocity = damp(cube.velocity);
 
-			// do not apply pull force to hypercube
-			if (&cube == &m_hypercube)
-				continue;
+			const Vec3 cube_position = getPosition(cube.getTransform());
 
 			if (player_ptr)
 			{
 				SphereDynamicModel& player = DEREF(player_ptr);
 
-				if (player.isHyper())
-				{
-					Vec3 pull = pull_force(getPosition(player.getTransform()) - getPosition(cube.getTransform()));
+				// do not pull hypercube in hyper mode
+				const bool pull_far = player.isHyper() && (&cube != &m_hypercube);
 
-					pull.y = 0;
+				const Vec3 pull = pull_force(getPosition(player.getTransform()) - cube_position, cube.radius + player.radius, !pull_far);
 
-					cube.velocity = cube.velocity + pull;
-				}
+				cube.velocity = cube.velocity + pull;
 			}
 
 			if (enemy_ptr)
 			{
 				SphereDynamicModel& enemy = DEREF(enemy_ptr);
 
-				if (enemy.isHyper())
-				{
-					Vec3 pull = pull_force(getPosition(enemy.getTransform()) - getPosition(cube.getTransform()));
+				// do not pull hypercube in hyper mode
+				const bool pull_far = enemy.isHyper() && (&cube != &m_hypercube);
 
-					pull.y = 0;
+				const Vec3 pull = pull_force(getPosition(enemy.getTransform()) - cube_position, cube.radius + enemy.radius, !pull_far);
 
-					cube.velocity = cube.velocity + pull;
-				}
+				cube.velocity = cube.velocity + pull;
 			}
 		}
 
