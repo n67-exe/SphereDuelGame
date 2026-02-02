@@ -1145,6 +1145,7 @@ public:
 				SphereDynamicModel& player = DEREF(player_ptr);
 				SphereDynamicModel& enemy = DEREF(enemy_ptr);
 
+				if (false)
 				if (player.getPoints() > enemy.getPoints() + 40)
 				{
 					enemy.dead = true;
@@ -1172,6 +1173,7 @@ public:
 					break;
 				}
 
+				if (false)
 				if (enemy.getPoints() > player.getPoints() + 40)
 				{
 					player.dead = true;
