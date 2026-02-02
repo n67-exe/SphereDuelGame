@@ -693,7 +693,11 @@ private:
 			{
 				DynamicModel& cube = getCube(i);
 
-				if ((position - getPosition(getCube(i).getTransform())).length() < separation + cube.radius)
+				Vec3 relative_position = position - getPosition(getCube(i).getTransform());
+
+				relative_position.y = 0;
+
+				if (relative_position.length() < separation + cube.radius)
 					goto RETRY;
 			}
 
@@ -820,6 +824,15 @@ public:
 
 				cube.velocity = cube.velocity + pull;
 			}
+
+			if (Vec3{cube.velocity.x, 0, cube.velocity.z}.length() <= slow_speed)
+			{
+				if (cube_position.y > bounds_to.y)
+					cube.velocity.y = -(cube_position.y - bounds_to.y) * cube_fall_damping_multiplier;
+
+				if (cube_position.y < bounds_from.y) // TODO: clamp
+					cube.velocity.y = -(cube_position.y - bounds_from.y) * cube_fall_damping_multiplier;
+			}
 		}
 
 		if (player_ptr)
@@ -861,7 +874,7 @@ public:
 		{
 			DynamicModel& cube = getCube(i);
 
-			setPosition(cube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, cube.radius));
+			setPosition(cube.getTransform(), getNextSpawn(player_ptr, enemy_ptr, cube.radius) + Vec3{0, cube_respawn_height, 0});
 			cube.velocity = {};
 
 			cube_times[i] = time;
@@ -1210,6 +1223,8 @@ public:
 	float bounce_force = 0, push_force = 0;
 	float damping_multiplier = 0;
 	float pull_range = 0, pull_multiplier = 1;
+	float slow_speed = 0;
+	float cube_respawn_height = 0, cube_fall_damping_multiplier = 1;
 };
 
 class PlayerSphereDynamicModel final : public SphereDynamicModel
