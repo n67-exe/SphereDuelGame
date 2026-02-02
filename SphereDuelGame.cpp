@@ -482,7 +482,7 @@ public:
 	{}
 
 public:
-	friend float timeOfCollision(const DynamicModel& object_1, float time_1, const DynamicModel& object_2, float time_2)
+	friend float timeOfCollision(const DynamicModel& object_1, float time_1, const DynamicModel& object_2, float time_2, float margin = 0)
 	{
 		const Vec3 d_p = (getPosition(object_1.getTransform()) - getPosition(object_2.getTransform())) - object_2.velocity * (time_1 - time_2);
 		const Vec3 d_v = object_1.velocity - object_2.velocity;
@@ -492,7 +492,7 @@ public:
 
 		const float pv = dot_product(d_p, d_v);
 		const float v2 = d_v.squaredLength();
-		const float r = object_1.radius + object_2.radius;
+		const float r = object_1.radius + object_2.radius + margin;
 
 		const float D = (pv * pv) - (v2 * (d_p.squaredLength() - (r * r)));
 
