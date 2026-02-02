@@ -943,7 +943,7 @@ public:
 
 					setPosition(other.getTransform(), getPosition(other.getTransform()) + dir * d_l);
 
-					other.velocity = other.velocity - (2 * dot_product(other.velocity, dir) - bounce_force) * dir;
+					other.velocity = other.velocity - (2 * dot_product(other.velocity, dir) - push_force) * dir;
 				}
 			}
 
@@ -1207,7 +1207,7 @@ public:
 	Vec3 bounds_from, bounds_to;
 	minstd_rand random_generator;
 
-	float bounce_force = 0;
+	float bounce_force = 0, push_force = 0;
 	float damping_multiplier = 0;
 	float pull_range = 0, pull_multiplier = 1;
 };
