@@ -678,6 +678,7 @@ private:
 		return true;
 	}
 
+public:
 	Vec3 getNextSpawn(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr, float margin)
 	{
 		const float x_margin = (bounds_from.x != bounds_to.x) ? margin : 0;
@@ -728,7 +729,6 @@ private:
 		return position;
 	}
 
-public:
 	int cubeCount() const
 	{
 		return m_cubes.size() + 1;
@@ -1749,12 +1749,20 @@ void main() try
 				{
 					player_points = DEREF(player).getPoints();
 
-					// delete player if dead
+					// respawn player if dead
 					if (DEREF(player).dead)
 					{
 						delete player;
 
 						player = nullptr;
+
+						Vec3 position = cube_manager.getNextSpawn(player, enemy, 10);
+
+						position.y = 10;
+
+						init_player(position);
+
+						player_points = DEREF(player).getPoints();
 					}
 				}
 
@@ -1762,22 +1770,35 @@ void main() try
 				{
 					enemy_points = DEREF(enemy).getPoints();
 
-					// delete enemy if dead
+					// respawn enemy if dead
 					if (DEREF(enemy).dead)
 					{
 						delete enemy;
 
 						enemy = nullptr;
+
+						Vec3 position = cube_manager.getNextSpawn(player, enemy, 10);
+
+						position.y = 10;
+
+						init_enemy(position);
+
+						enemy_points = DEREF(enemy).getPoints();
 					}
 				}
 			}
+
+			if (state != GameState::Paused)
+				state = GameState::Playing;
 
 			// update game state
 			if (state == GameState::Playing)
 			{
 				if (!player)
 					state = GameState::GameOver;
-				else if (max(player_points, enemy_points) >= 120)
+				else if (!enemy)
+					state = GameState::GameWon;
+				else if (max(player_points, enemy_points) >= 2500)
 				{
 					if (player_points > enemy_points)
 						state = GameState::GameWon;
@@ -1792,13 +1813,13 @@ void main() try
 
 			ostringstream player_stats, enemy_stats;
 
-			player_stats << "\nPlayer: " << setw(3) << player_points;
-			enemy_stats << "\nEnemy: " << setw(3) << enemy_points;
+			player_stats << "\nBlue: " << setw(4) << setfill(' ') << player_points;
+			enemy_stats << "\Red: " << setw(4) << setfill(' ') << enemy_points;
 
 			const string stats = (enemy_points > player_points ? enemy_stats.str() + player_stats.str() : player_stats.str() + enemy_stats.str());
 
 			// Display players' points
-			main_font.Draw("Points:" + stats, engine.GetWidth() - 5, 0, kBlack, kRight, kTop);
+			main_font.Draw("Points:\nGoal: 2500" + stats, engine.GetWidth() - 5, 0, kBlack, kRight, kTop);
 
 			// Display on screen message
 			switch (state)
@@ -1806,9 +1827,9 @@ void main() try
 			break; case GameState::Paused:
 				main_font.Draw("Paused", engine.GetWidth() / 2, engine.GetHeight() / 2, kBlack, kCentre, kVCentre);
 			break; case GameState::GameWon:
-				main_font.Draw("Congrats, You WON", engine.GetWidth() / 2, engine.GetHeight() / 2, kGreen, kCentre, kVCentre);
+				main_font.Draw("Blue won", engine.GetWidth() / 2, engine.GetHeight() / 2, kGreen, kCentre, kVCentre);
 			break; case GameState::GameOver:
-				main_font.Draw("You Lost", engine.GetWidth() / 2, engine.GetHeight() / 2, kRed, kCentre, kVCentre);
+				main_font.Draw("Red won", engine.GetWidth() / 2, engine.GetHeight() / 2, kGreen, kCentre, kVCentre);
 			}
 
 			// Render the scene
