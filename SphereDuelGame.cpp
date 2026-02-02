@@ -576,6 +576,9 @@ public:
 
 		radius *= radius_scale;
 
+		forward_axis.multiplier /= radius_scale;
+		rotation_axis.multiplier /= radius_scale;
+
 		if (hyper && hyper_time > 0)
 		{
 			setSkin(m_hyper_skin);
