@@ -1535,50 +1535,62 @@ void main() try
 		StaticModel grass{engine, grass_mesh, {0, -5, 0}};
 		StaticModel skybox{engine, skybox_mesh, {0, -1000, 0}};
 
-		auto* player = new PlayerSphereDynamicModel{engine, sphere_mesh, "sphere-player-normal.png", "sphere-player-hyper.png", {0, 10, 0}, 10};
-		{
-			DEREF(player).forward_axis = {Key_W, Key_S, 0.2};
-			DEREF(player).rotation_axis = {Key_D, Key_A, 2};
-
-			DEREF(player).hyper_time = 5;
-			DEREF(player).radius_multiplier = 1.2;
-			DEREF(player).point_threshold = 40;
-			DEREF(player).max_scale_level = 5;
-		}
-
-		// pick a random position 80 units away
-		const float angle = uniform_real_distribution<float>{0, numbers::pi * 2}(rd);
-		const Vec3 enemy_position = Vec3{sin(angle), 0, cos(angle)} * 80 + Vec3{0, 10, 0};
-
-		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "sphere-enemy-normal.png", "sphere-enemy-hyper.png", enemy_position, 10};
-		{
-			DEREF(enemy).random_generator.seed(rd());
-
-			DEREF(enemy).forward_axis.multiplier = 0.2;
-			DEREF(enemy).rotation_axis.multiplier = 2;
-
-			DEREF(enemy).movement_threshold = 0.75;
-			DEREF(enemy).rotation_threshold = 0.1;
-
-			DEREF(enemy).hyper_time = 5;
-			DEREF(enemy).radius_multiplier = 1.2;
-			DEREF(enemy).point_threshold = 40;
-			DEREF(enemy).max_scale_level = 5;
-		}
-
 		DynamicModelManager cube_manager{engine, cube_mesh, "cube-normal.png", "cube-hyper.png", 12, 2.5};
 		{
 			cube_manager.bounds_from = {-100, 2.5, -100};
 			cube_manager.bounds_to = {100, 2.5, 100};
 			cube_manager.separation = 10;
+			cube_manager.slow_speed = 0.1;
 
 			cube_manager.damping_multiplier = 0.75;
 			cube_manager.bounce_force = 4;
+			cube_manager.push_force = 8;
 			cube_manager.pull_range = 50;
 			cube_manager.pull_multiplier = 0.4;
-
-			cube_manager.respawnAll(player, enemy);
+			cube_manager.cube_respawn_height = -10;
+			cube_manager.cube_fall_damping_multiplier = 0.1;
 		}
+
+		SphereDynamicModel *player, *enemy;
+
+		auto init_player = [&](Vec3 position)
+		{
+			player = new PlayerSphereDynamicModel{engine, sphere_mesh, "sphere-player-normal.png", "sphere-player-hyper.png", position, 10};
+			{
+				auto& player_ref = dynamic_cast<PlayerSphereDynamicModel&>(DEREF(player));
+
+				player_ref.forward_axis = {Key_W, Key_S, 0.2};
+				player_ref.rotation_axis = {Key_D, Key_A, 2};
+
+				player_ref.hyper_time = 5;
+				player_ref.radius_multiplier = 1.2;
+				player_ref.point_threshold = 40;
+				player_ref.max_scale_level = 5;
+			}
+		};
+
+		auto init_enemy = [&](Vec3 position)
+		{
+			enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "sphere-enemy-normal.png", "sphere-enemy-hyper.png", position, 10};
+			{
+				auto& enemy_ref = dynamic_cast<EnemySphereDynamicModel&>(DEREF(enemy));
+
+				enemy_ref.random_generator.seed(rd());
+
+				enemy_ref.forward_axis.multiplier = 0.2;
+				enemy_ref.rotation_axis.multiplier = 2;
+
+				enemy_ref.movement_threshold = 0.75;
+				enemy_ref.rotation_threshold = 0.1;
+
+				enemy_ref.hyper_time = 5;
+				enemy_ref.radius_multiplier = 1.2;
+				enemy_ref.point_threshold = 40;
+				enemy_ref.max_scale_level = 5;
+
+				enemy_ref.model_manager = &cube_manager;
+			}
+		};
 
 		KeyboardControlledCamera camera_1{engine, {0, 210, 0}};
 		{
@@ -1612,7 +1624,16 @@ void main() try
 		StaticModel* const static_objects[] = {&water, &cliff, &grass, &skybox};
 		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
 
-		DEREF(enemy).model_manager = &cube_manager;
+		const Vec3 player_position{0, 10, 0};
+
+		// pick a random position 80 units away
+		const float enemy_angle = uniform_real_distribution<float>{0, numbers::pi * 2}(rd);
+		const Vec3 enemy_position = Vec3{sin(enemy_angle), 0, cos(enemy_angle)} * 80 + player_position;
+
+		init_player(player_position);
+		init_enemy(enemy_position);
+
+		cube_manager.respawnAll(player, enemy);
 
 		// Set initial game state
 		StaticCamera* active_camera = &camera_1;
