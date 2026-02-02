@@ -1557,18 +1557,18 @@ void main() try
 		StaticModel grass{engine, grass_mesh, {0, -5, 0}};
 		StaticModel skybox{engine, skybox_mesh, {0, -1000, 0}};
 
-		DynamicModelManager cube_manager{engine, cube_mesh, "cube-normal.png", "cube-hyper.png", 12, 2.5};
+		DynamicModelManager cube_manager{engine, cube_mesh, "cube-normal.png", "cube-hyper.png", 30, 2.5};
 		{
 			cube_manager.bounds_from = {-100, 2.5, -100};
 			cube_manager.bounds_to = {100, 2.5, 100};
 			cube_manager.separation = 10;
 			cube_manager.slow_speed = 0.1;
 
-			cube_manager.damping_multiplier = 0.75;
+			cube_manager.damping_multiplier = 0.85;
 			cube_manager.bounce_force = 4;
 			cube_manager.push_force = 8;
 			cube_manager.pull_range = 50;
-			cube_manager.pull_multiplier = 0.4;
+			cube_manager.pull_multiplier = 0.5;
 			cube_manager.cube_respawn_height = -10;
 			cube_manager.cube_fall_damping_multiplier = 0.1;
 		}
@@ -1577,17 +1577,24 @@ void main() try
 
 		auto init_player = [&](Vec3 position)
 		{
-			player = new PlayerSphereDynamicModel{engine, sphere_mesh, "sphere-player-normal.png", "sphere-player-hyper.png", position, 10};
+			player = new EnemySphereDynamicModel{engine, sphere_mesh, "sphere-player-normal.png", "sphere-player-hyper.png", position, 10};
 			{
-				auto& player_ref = dynamic_cast<PlayerSphereDynamicModel&>(DEREF(player));
+				auto& player_ref = dynamic_cast<EnemySphereDynamicModel&>(DEREF(player));
 
-				player_ref.forward_axis = {Key_W, Key_S, 0.2};
-				player_ref.rotation_axis = {Key_D, Key_A, 2};
+				player_ref.random_generator.seed(rd());
+
+				player_ref.forward_axis.multiplier = 0.2;
+				player_ref.rotation_axis.multiplier = 4;
+
+				player_ref.movement_threshold = 0.65;
+				player_ref.rotation_threshold = 0.1;
 
 				player_ref.hyper_time = 5;
-				player_ref.radius_multiplier = 1.2;
-				player_ref.point_threshold = 40;
-				player_ref.max_scale_level = 5;
+				player_ref.radius_multiplier = 1.05;
+				player_ref.point_threshold = 100;
+				player_ref.max_scale_level = 24;
+
+				player_ref.model_manager = &cube_manager;
 			}
 		};
 
@@ -1600,15 +1607,15 @@ void main() try
 				enemy_ref.random_generator.seed(rd());
 
 				enemy_ref.forward_axis.multiplier = 0.2;
-				enemy_ref.rotation_axis.multiplier = 2;
+				enemy_ref.rotation_axis.multiplier = 4;
 
-				enemy_ref.movement_threshold = 0.75;
+				enemy_ref.movement_threshold = 0.65;
 				enemy_ref.rotation_threshold = 0.1;
 
 				enemy_ref.hyper_time = 5;
-				enemy_ref.radius_multiplier = 1.2;
-				enemy_ref.point_threshold = 40;
-				enemy_ref.max_scale_level = 5;
+				enemy_ref.radius_multiplier = 1.05;
+				enemy_ref.point_threshold = 100;
+				enemy_ref.max_scale_level = 24;
 
 				enemy_ref.model_manager = &cube_manager;
 			}
