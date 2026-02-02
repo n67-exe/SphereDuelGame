@@ -1294,30 +1294,40 @@ public:
 
 		// """AI"""
 		// pick closest cube and go for it
-		float min_distance = numbers::largest;
-		int index = 0;
+		Vec3 closest_relative_position{numbers::largest};
+
+		DynamicModel& hypercube = manager.getCube(manager.cubeCount() - 1);
+		float hypercube_value = 1;
 
 		for (int i = 0; i < manager.cubeCount(); i++)
 		{
 			DynamicModel& cube = manager.getCube(i);
 
-			float distance = (getPosition(cube.getTransform()) - getPosition(getTransform())).length();
+			if (cube.velocity.length() >= manager.slow_speed)
+				continue;
 
-			if (distance <= min_distance)
+			Vec3 relative_position = getPosition(cube.getTransform()) - getPosition(getTransform());
+
+			if (&cube == &hypercube)
 			{
-				min_distance = distance;
-				index = i;
+				const float multiplier = hypercube_value * (1 - m_hyper_timer / hyper_time);
+
+				relative_position = (multiplier == 0 ? Vec3{numbers::largest} : relative_position / multiplier);
 			}
+			else
+			{
+				if ((getPosition(cube.getTransform()) - getPosition(hypercube.getTransform())).length() <= manager.pull_range)
+					hypercube_value++;
+			}
+
+			if (relative_position.length() < closest_relative_position.length())
+				closest_relative_position = relative_position;
 		}
 
-		if (isinf(min_distance))
+		if (closest_relative_position.length() >= numbers::largest)
 			return;
 
-		DynamicModel& cube = manager.getCube(index);
-
-		const Vec3 relative_position = getPosition(cube.getTransform()) - getPosition(getTransform());
-
-		const float relative_angle = m_angle * numbers::deg_to_rad - atan2(relative_position.x, relative_position.z);
+		const float relative_angle = m_angle * numbers::deg_to_rad - atan2(closest_relative_position.x, closest_relative_position.z);
 
 		if (cos(relative_angle) > movement_threshold)
 		{
