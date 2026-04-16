@@ -1471,20 +1471,22 @@ void main() try
 		engine.AddMediaFolder("Media");
 
 		// Load resources
+		IMesh& cliff_mesh = DEREF(engine.LoadMesh("cliff.x"));
+		IMesh& grass_mesh = DEREF(engine.LoadMesh("grass.x"));
 		IMesh& water_mesh = DEREF(engine.LoadMesh("water.x"));
-		IMesh& island_mesh = DEREF(engine.LoadMesh("island.x"));
-		IMesh& skybox_mesh = DEREF(engine.LoadMesh("sky.x"));
-		IMesh& sphere_mesh = DEREF(engine.LoadMesh("spheremesh.x"));
-		IMesh& cube_mesh = DEREF(engine.LoadMesh("minicube.x"));
+		IMesh& skybox_mesh = DEREF(engine.LoadMesh("skybox.x"));
+		IMesh& sphere_mesh = DEREF(engine.LoadMesh("sphere.x"));
+		IMesh& cube_mesh = DEREF(engine.LoadMesh("cube.x"));
 
 		IFont& main_font = DEREF(engine.LoadFont("Comic Sans MS", 36));
 
 		// Initialize game objects
-		StaticModel water{engine, water_mesh, {0, -5, 0}};
-		StaticModel island{engine, island_mesh, {0, -5, 0}};
-		StaticModel skybox{engine, skybox_mesh, {0, -960, 0}};
+		StaticModel water{engine, water_mesh, {0, -10, 0}};
+		StaticModel cliff{engine, cliff_mesh, {0, -5, 0}};
+		StaticModel grass{engine, grass_mesh, {0, -5, 0}};
+		StaticModel skybox{engine, skybox_mesh, {0, -1000, 0}};
 
-		auto* player = new PlayerSphereDynamicModel{engine, sphere_mesh, "regularsphere.jpg", "hypersphere.jpg", {0, 10, 0}, 10};
+		auto* player = new PlayerSphereDynamicModel{engine, sphere_mesh, "sphere-player-normal.png", "sphere-player-hyper.png", {0, 10, 0}, 10};
 		{
 			DEREF(player).forward_axis = {Key_W, Key_S, 0.2};
 			DEREF(player).rotation_axis = {Key_D, Key_A, 2};
@@ -1499,7 +1501,7 @@ void main() try
 		const float angle = uniform_real_distribution<float>{0, numbers::pi * 2}(rd);
 		const Vec3 enemy_position = Vec3{sin(angle), 0, cos(angle)} * 80 + Vec3{0, 10, 0};
 
-		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "enemysphere.jpg", "hypersphere.jpg", enemy_position, 10};
+		auto* enemy = new EnemySphereDynamicModel{engine, sphere_mesh, "sphere-enemy-normal.png", "sphere-enemy-hyper.png", enemy_position, 10};
 		{
 			DEREF(enemy).random_generator.seed(rd());
 
@@ -1515,7 +1517,7 @@ void main() try
 			DEREF(enemy).max_scale_level = 5;
 		}
 
-		DynamicModelManager cube_manager{engine, cube_mesh, "minicube.jpg", "hypercube.jpg", 12, 2.5};
+		DynamicModelManager cube_manager{engine, cube_mesh, "cube-normal.png", "cube-hyper.png", 12, 2.5};
 		{
 			cube_manager.bounds_from = {-100, 2.5, -100};
 			cube_manager.bounds_to = {100, 2.5, 100};
@@ -1558,7 +1560,7 @@ void main() try
 			debug_camera.mouse_move.multiplier = 0.05;
 		}
 
-		StaticModel* const static_objects[] = {&water, &island, &skybox};
+		StaticModel* const static_objects[] = {&water, &cliff, &grass, &skybox};
 		StaticCamera* const cameras[] = {&camera_1, &camera_2, &debug_camera};
 
 		DEREF(enemy).model_manager = &cube_manager;
