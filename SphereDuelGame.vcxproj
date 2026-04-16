@@ -147,6 +147,8 @@ copy "C:\ProgramData\TL-Engine\3rd Party\TL-Xtreme\shader\*.*" "$(OutDir)" &gt; 
     <Text Include="cerr.log" />
     <Text Include="clog.log" />
     <Text Include="cout.log" />
+    <Text Include="Media\ATTRIBUTION.txt" />
+    <Text Include="Media\LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Media\cliff-faces.png" />

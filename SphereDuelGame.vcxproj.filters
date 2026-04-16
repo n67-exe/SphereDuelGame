@@ -50,6 +50,12 @@
     <Text Include="cout.log">
       <Filter>Logs</Filter>
     </Text>
+    <Text Include="Media\ATTRIBUTION.txt">
+      <Filter>Media</Filter>
+    </Text>
+    <Text Include="Media\LICENSE.txt">
+      <Filter>Media</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <Image Include="Media\cliff-faces.png">
