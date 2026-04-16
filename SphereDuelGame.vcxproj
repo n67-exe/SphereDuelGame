@@ -135,12 +135,32 @@ copy "C:\ProgramData\TL-Engine\3rd Party\TL-Xtreme\shader\*.*" "$(OutDir)" &gt; 
   <ItemGroup>
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
+    <None Include="Media\cliff.x" />
+    <None Include="Media\cube.x" />
+    <None Include="Media\grass.x" />
+    <None Include="Media\skybox.x" />
+    <None Include="Media\sphere.x" />
+    <None Include="Media\water.x" />
     <None Include="LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="cerr.log" />
     <Text Include="clog.log" />
     <Text Include="cout.log" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Media\cliff-faces.png" />
+    <Image Include="Media\cube-hyper.png" />
+    <Image Include="Media\cube-normal.png" />
+    <Image Include="Media\grass.png" />
+    <Image Include="Media\skybox-bottom.png" />
+    <Image Include="Media\skybox-sides.png" />
+    <Image Include="Media\skybox-top.png" />
+    <Image Include="Media\sphere-enemy-hyper.png" />
+    <Image Include="Media\sphere-enemy-normal.png" />
+    <Image Include="Media\sphere-player-hyper.png" />
+    <Image Include="Media\sphere-player-normal.png" />
+    <Image Include="Media\water.png" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

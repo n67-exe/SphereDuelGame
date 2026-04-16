@@ -371,5 +371,8 @@ FodyWeavers.xsd
 *.psh
 *.vsh
 
-# Project media files
-[Mm]edia/
+# Unused media
+[Mm]edia/[Uu]nused/
+
+# Media sources
+[Mm]edia/[Ss]ources/

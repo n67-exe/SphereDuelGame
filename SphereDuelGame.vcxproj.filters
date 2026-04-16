@@ -6,11 +6,38 @@
   <ItemGroup>
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
+    <None Include="Media\cliff.x">
+      <Filter>Media\Models</Filter>
+    </None>
+    <None Include="Media\cube.x">
+      <Filter>Media\Models</Filter>
+    </None>
+    <None Include="Media\grass.x">
+      <Filter>Media\Models</Filter>
+    </None>
+    <None Include="Media\skybox.x">
+      <Filter>Media\Models</Filter>
+    </None>
+    <None Include="Media\sphere.x">
+      <Filter>Media\Models</Filter>
+    </None>
+    <None Include="Media\water.x">
+      <Filter>Media\Models</Filter>
+    </None>
     <None Include="LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Logs">
       <UniqueIdentifier>{7c446798-3f48-429f-ab7f-023649d0da72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Media">
+      <UniqueIdentifier>{4fa7f756-413f-40fa-ac91-20d9ea159e40}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Media\Models">
+      <UniqueIdentifier>{dd6f4b9f-47f3-4e75-8eeb-ce53f331743c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Media\Textures">
+      <UniqueIdentifier>{a845f4d7-0c54-4b6b-bf7f-b8e80596da9b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -23,5 +50,43 @@
     <Text Include="cout.log">
       <Filter>Logs</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Media\cliff-faces.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\cube-hyper.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\cube-normal.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\grass.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\skybox-bottom.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\skybox-sides.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\skybox-top.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\sphere-enemy-hyper.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\sphere-enemy-normal.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\sphere-player-hyper.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\sphere-player-normal.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Media\water.png">
+      <Filter>Media\Textures</Filter>
+    </Image>
   </ItemGroup>
 </Project>
