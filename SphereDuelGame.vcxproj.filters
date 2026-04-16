@@ -6,6 +6,7 @@
   <ItemGroup>
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
+    <None Include="LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Logs">

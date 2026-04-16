@@ -135,6 +135,7 @@ copy "C:\ProgramData\TL-Engine\3rd Party\TL-Xtreme\shader\*.*" "$(OutDir)" &gt; 
   <ItemGroup>
     <None Include=".gitattributes" />
     <None Include=".gitignore" />
+    <None Include="LICENSE.txt" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="cerr.log" />
