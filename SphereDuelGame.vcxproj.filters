@@ -25,6 +25,7 @@
       <Filter>Media\Models</Filter>
     </None>
     <None Include="LICENSE.txt" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Logs">
@@ -38,6 +39,9 @@
     </Filter>
     <Filter Include="Media\Textures">
       <UniqueIdentifier>{a845f4d7-0c54-4b6b-bf7f-b8e80596da9b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Misc">
+      <UniqueIdentifier>{c56a2208-7fec-4943-8511-477a91e594e2}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -93,6 +97,9 @@
     </Image>
     <Image Include="Media\water.png">
       <Filter>Media\Textures</Filter>
+    </Image>
+    <Image Include="Misc\Screenshot.jpg">
+      <Filter>Misc</Filter>
     </Image>
   </ItemGroup>
 </Project>

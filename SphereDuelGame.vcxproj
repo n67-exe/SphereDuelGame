@@ -142,6 +142,10 @@ copy "C:\ProgramData\TL-Engine\3rd Party\TL-Xtreme\shader\*.*" "$(OutDir)" &gt; 
     <None Include="Media\sphere.x" />
     <None Include="Media\water.x" />
     <None Include="LICENSE.txt" />
+    <None Include="README.md">
+      <SubType>
+      </SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="cerr.log" />
@@ -163,6 +167,7 @@ copy "C:\ProgramData\TL-Engine\3rd Party\TL-Xtreme\shader\*.*" "$(OutDir)" &gt; 
     <Image Include="Media\sphere-player-hyper.png" />
     <Image Include="Media\sphere-player-normal.png" />
     <Image Include="Media\water.png" />
+    <Image Include="Misc\Screenshot.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
