@@ -109,7 +109,14 @@ namespace internal
 			message << setw(offset) << "  code" << " : " << info.code << '\n';
 
 		if (info.file)
-			message << setw(offset) << "  location" << " : " << filename(info.file) << ":" << info.line << " [" << info.file << "]" << '\n';
+		{
+			cstring file_name = filename(info.file);
+
+			if (file_name == info.file)
+				message << setw(offset) << "  location" << " : " << file_name << ":" << info.line << '\n';
+			else
+				message << setw(offset) << "  location" << " : " << file_name << ":" << info.line << " [" << info.file << "]" << '\n';
+		}
 
 		if (info.function_signature)
 		{
