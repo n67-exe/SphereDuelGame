@@ -704,7 +704,7 @@ private:
 
 				relative_position.y = 0;
 
-				if (relative_position.length() < separation + cube.radius)
+				if (relative_position.length() <= margin + separation + cube.radius)
 					goto RETRY;
 			}
 
@@ -712,7 +712,7 @@ private:
 			{
 				const SphereDynamicModel& player = DEREF(player_ptr);
 
-				if ((position - getPosition(player.getTransform())).length() < separation + player.radius)
+				if ((position - getPosition(player.getTransform())).length() <= margin + separation + player.radius)
 					goto RETRY;
 			}
 
@@ -720,7 +720,7 @@ private:
 			{
 				const SphereDynamicModel& enemy = DEREF(enemy_ptr);
 
-				if ((position - getPosition(enemy.getTransform())).length() < separation + enemy.radius)
+				if ((position - getPosition(enemy.getTransform())).length() <= margin + separation + enemy.radius)
 					goto RETRY;
 			}
 		}
@@ -758,7 +758,12 @@ public:
 
 	void respawnAll(const SphereDynamicModel* player_ptr, const SphereDynamicModel* enemy_ptr)
 	{
-		const Vec3 outside = bounds_to + Vec3{separation, separation, separation};
+		float max_radius = 0;
+
+		for (int i = 0; i < cubeCount(); i++)
+			max_radius = max(max_radius, getCube(i).radius);
+
+		const Vec3 outside = bounds_to + Vec3{separation + max_radius, separation + max_radius, separation + max_radius};
 
 		for (int i = 0; i < cubeCount(); i++)
 		{
